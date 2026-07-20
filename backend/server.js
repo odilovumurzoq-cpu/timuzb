@@ -7,7 +7,7 @@ const cron = require('node-cron');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { sendUserbotMessage, getTelegramMessages, createWeddingGroup, kickUserFromGroup } = require('./userbot');
+const { sendUserbotMessage, getTelegramMessages, createWeddingGroup, kickUserFromGroup, deleteWeddingGroup } = require('./userbot');
 const { sendSMS } = require('./sms');
 
 // Global Anti-Crash Handlers (bot va server kutilmagan xatolarda o'chib qolmasligi uchun)
@@ -242,8 +242,8 @@ app.post('/api/auth/telegram', async (req, res) => {
       return res.status(403).json({ message: "Sizning profilingiz topilmadi. Admin sizni tizimga qo'shishi kerak." });
     }
 
-    const token = jwt.sign({ id: user._id, role: user.role, profession: user.profession }, process.env.JWT_SECRET || 'secret', { expiresIn: '1d' });
-    res.json({ token, user: { id: user._id, username: user.username, role: user.role, fullName: user.fullName, profession: user.profession } });
+    const token = jwt.sign({ id: user._id, role: user.role, professions: user.professions }, process.env.JWT_SECRET || 'secret', { expiresIn: '1d' });
+    res.json({ token, user: { id: user._id, username: user.username, role: user.role, fullName: user.fullName, professions: user.professions } });
 
   } catch (err) {
     res.status(500).json({ message: "Server xatosi" });
@@ -312,9 +312,9 @@ app.put('/api/admin/settings', authMiddleware, adminMiddleware, async (req, res)
 
 app.post('/api/operators', authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const { username, password, fullName, telegramUsername, profession } = req.body;
+    const { username, password, fullName, telegramUsername, professions } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newOperator = new User({ username, password: hashedPassword, fullName, telegramUsername, role: 'operator', profession: profession || 'operator' });
+    const newOperator = new User({ username, password: hashedPassword, fullName, telegramUsername, role: 'operator', professions: professions || ['operator'] });
     await newOperator.save();
     res.json(newOperator);
   } catch (error) {
@@ -334,9 +334,9 @@ app.delete('/api/operators/:id', authMiddleware, adminMiddleware, async (req, re
 
 app.put('/api/operators/:id', authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const { username, password, fullName, telegramUsername, profession } = req.body;
+    const { username, password, fullName, telegramUsername, professions } = req.body;
     let updateData = { username, fullName, telegramUsername };
-    if (profession) updateData.profession = profession;
+    if (professions) updateData.professions = professions;
     if (password) {
       updateData.password = await bcrypt.hash(password, 10);
     }
@@ -372,14 +372,12 @@ app.post('/api/events', authMiddleware, adminMiddleware, async (req, res) => {
       });
       
       let clientContactName = "Mijoz";
-      if (event.groomName || event.brideName) {
-         clientContactName = `${event.groomName || ''} & ${event.brideName || ''} (${new Date(event.date).toLocaleDateString()})`.trim();
-      } else if (event.clientName) {
+        if (event.clientName) {
          clientContactName = `${event.clientName} (${new Date(event.date).toLocaleDateString()})`;
       }
       
       if (event.clientPhone) {
-        const title = `${event.groomName || 'Kuyov'} & ${event.brideName || 'Kelin'}`;
+        const title = event.title;
         const chatId = await createWeddingGroup(title, event.clientPhone, clientContactName, usernames);
         if (chatId) {
            event.telegramChatId = chatId;
@@ -515,9 +513,9 @@ app.put('/api/events/:id', authMiddleware, adminMiddleware, async (req, res) => 
     }
 
     // Premium message if status changed to Topshirildi
-    if (oldEvent && oldEvent.status !== 'Topshirildi' && event.status === 'Topshirildi') {
+    if (oldEvent && oldEvent.status !== 'Tayyor' && event.status === 'Tayyor') {
       if (event.clientPhone) {
-        const clientNameStr = (event.groomName || event.brideName) ? `${event.groomName || ''} & ${event.brideName || ''}` : (event.clientName || 'Hurmatli Mijoz');
+        const clientNameStr = event.clientName || event.title;
         const contactName = `${clientNameStr} ${new Date(event.date).toLocaleDateString()}`;
         
         let msg = `Assalomu alaykum, ${clientNameStr}!\n\nSizning videongiz tayyor bo'ldi va muvaffaqiyatli topshirildi! 🎉\nOila qurishingiz bilan chin qalbdan tabriklaymiz. Hayotingiz doimo baxt, quvonch va go'zal lahzalarga to'la bo'lishini tilab qolamiz. 🌟\n\nBizning xizmatimizdan foydalanganingiz uchun TimProduction jamoasi nomidan tashakkur bildiramiz! 🤝`;
@@ -526,7 +524,7 @@ app.put('/api/events/:id', authMiddleware, adminMiddleware, async (req, res) => 
            msg += `\n\n🎥 Video uchun havola: ${event.videoLink}`;
         }
         
-        msg += `\n\n⭐ Iltimos, xizmat sifatini baholash uchun quyidagi havolaga kiring:\nhttps://timproduction.uz/rate/${event._id}`;
+        msg += `\n\n⭐ Iltimos, xizmat sifatini baholash uchun quyidagi havolaga kiring:\nhttps://timuzbbukhara.onrender.com/rate/${event._id}`;
         
         sendUserbotMessage(event.clientPhone, msg, contactName).catch(err => console.log('Telegram xabar ketmadi:', err.message));
       }
@@ -554,7 +552,7 @@ app.put('/api/events/:id/status', authMiddleware, async (req, res) => {
     
     await event.save();
 
-    if (oldStatus !== 'Topshirildi' && event.status === 'Topshirildi') {
+    if (oldStatus !== 'Tayyor' && event.status === 'Tayyor') {
       if (event.clientPhone) {
         const contactName = `${event.clientName || 'Mijoz'} ${new Date(event.date).toLocaleDateString('uz-UZ', { timeZone: 'Asia/Tashkent', day: '2-digit', month: '2-digit', year: 'numeric' })}`;
         let msg = `Assalomu alaykum, ${event.clientName || 'Mijoz'}! 👋\n\nSizning videongiz tayyor bo'ldi! 🎉\nIltimos, Tim Production ofisidan kelib olib keting.\n\nBizni tanlaganingiz uchun tashakkur! 🎥✨`;
@@ -580,7 +578,7 @@ app.put('/api/events/:id/task', authMiddleware, async (req, res) => {
     // Check if already completed
     const existingTask = event.completedTasks.find(t => t.userId.toString() === userId);
     if (!existingTask) {
-      event.completedTasks.push({ userId, role: req.user.profession || 'operator', completedAt: new Date() });
+      event.completedTasks.push({ userId, role: req.user.professions?.[0] || 'operator', completedAt: new Date() });
       await event.save();
     }
     
@@ -770,7 +768,7 @@ cron.schedule('0 10 * * *', async () => {
         // Check if month and day match, and year is less than current year
         if (evDate.getDate() === today.getDate() && evDate.getMonth() === today.getMonth() && evDate.getFullYear() < today.getFullYear()) {
           const years = today.getFullYear() - evDate.getFullYear();
-          const clientNameStr = (event.groomName || event.brideName) ? `${event.groomName || ''} & ${event.brideName || ''}` : (event.clientName || 'Mijoz');
+          const clientNameStr = event.clientName || event.title;
           const msg = `Assalomu alaykum, ${clientNameStr}!\n\nTimProduction jamoasi sizni oila qurganingizning ${years} yilligi bilan chin dildan muborakbod etadi! 🎉🥂\nOilangizga tinchlik, baxt va saodat tilaymiz.\n\nKelgusida farzandlaringizning (Beshik to'y, Sunnat to'y) quvonchli kunlarida ham xizmatingizda bo'lishdan mamnun bo'lamiz! 🎥✨`;
           
           sendUserbotMessage(event.clientPhone, msg, clientNameStr).catch(err => console.log('Yubiley xabari ketmadi:', err.message));
@@ -792,14 +790,12 @@ app.post('/api/ai-chat', authMiddleware, async (req, res) => {
     if (msgLower.includes('qancha') || msgLower.includes('tushum') || msgLower.includes('daromad') || msgLower.includes('foyda')) {
       const events = await Event.find({ status: 'Topshirildi' });
       let totalBudget = 0;
-      let totalExpense = 0;
       events.forEach(e => {
         totalBudget += e.budget || 0;
-        totalExpense += (e.operatorFee || 0) + (e.editorFee || 0) + (e.roninFee || 0) + (e.photoFee || 0);
       });
-      const netProfit = totalBudget - totalExpense;
+      const netProfit = totalBudget;
       
-      const responseText = `🤖 AI Hisoboti: Jami tushum ${new Intl.NumberFormat('uz-UZ').format(totalBudget)} so'm. Xarajatlar ${new Intl.NumberFormat('uz-UZ').format(totalExpense)} so'm. Umumiy sof foyda: ${new Intl.NumberFormat('uz-UZ').format(netProfit)} so'm tashkil qiladi.`;
+      const responseText = `🤖 AI Hisoboti: Jami tushum ${new Intl.NumberFormat('uz-UZ').format(totalBudget)} so'm. Sof foyda: ${new Intl.NumberFormat('uz-UZ').format(netProfit)} so'm tashkil qiladi.`;
       return res.json({ reply: responseText });
     }
     
@@ -831,7 +827,7 @@ app.post('/api/events/:id/rate', async (req, res) => {
        // We can send to saved env ADMIN_PHONE or hardcode or send to the first admin.
        const admin = await User.findOne({ role: 'admin' });
        if (admin && admin.telegramUsername) {
-          sendUserbotMessage(admin.telegramUsername, `⚠️ DIQQAT! Mijoz past baho berdi!\n\nMijoz: ${event.clientName || event.groomName}\nTo'y: ${event.title}\nBaho: ${rating}/10\nFikr: ${feedback || 'Yo\'q'}\nZudlik bilan mijoz bilan bog'laning!`, "Admin").catch(e=>e);
+          sendUserbotMessage(admin.telegramUsername, `⚠️ DIQQAT! Mijoz past baho berdi!\n\nMijoz: ${event.clientName || event.title}\nTo'y: ${event.title}\nBaho: ${rating}/10\nFikr: ${feedback || 'Yo\'q'}\nZudlik bilan mijoz bilan bog'laning!`, "Admin").catch(e=>e);
        }
     }
     res.json({ success: true });

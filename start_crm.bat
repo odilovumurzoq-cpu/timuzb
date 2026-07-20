@@ -1,26 +1,41 @@
 @echo off
-echo ==============================================
-echo TimProduction CRM - Local Serverni Ishga Tushirish
-echo ==============================================
+color 0b
+echo ===================================================
+echo       TIM PRODUCTION CRM - Boshqaruv Tizimi
+echo ===================================================
+echo.
+echo Tizim ishga tushirilmoqda. Iltimos, kuting...
+echo.
 
-set "NODE_DIR=%~dp0node_env\node-v20.11.1-win-x64"
-set "PATH=%NODE_DIR%;%PATH%"
+cd /d "%~dp0"
 
-if not exist "%NODE_DIR%\node.exe" (
-    echo Xatolik: Node.js o'rnatilmagan! Iltimos kutib turing...
-    pause
-    exit /b
+echo [1/3] Backend (Server) tekshirilmoqda...
+cd backend
+IF NOT EXIST "node_modules" (
+    echo node_modules topilmadi. Backend paketlari o'rnatilmoqda...
+    call npm install
 )
-
+start "TimProduction - Server" cmd /c "npm start"
+echo Server muvaffaqiyatli ishga tushdi!
 echo.
-echo [1/2] Backend Server ishga tushirilmoqda...
-start "TimProduction - Backend" cmd /c "cd backend && node server.js"
 
-echo [2/2] Frontend Server ishga tushirilmoqda...
-start "TimProduction - Frontend" cmd /c "cd frontend && npm run dev"
-
+echo [2/3] Frontend (Web Sayt) tekshirilmoqda...
+cd ../frontend
+IF NOT EXIST "node_modules" (
+    echo node_modules topilmadi. Frontend paketlari o'rnatilmoqda...
+    call npm install
+)
+start "TimProduction - Vebsayt" cmd /c "npm start"
+echo Web sayt muvaffaqiyatli ishga tushdi!
 echo.
-echo Tizim muvaffaqiyatli ishga tushirildi!
-echo Bir ozdan so'ng sayt ochiladi...
+
+echo [3/3] Tizim tayyor!
+echo Brauzer avtomatik ravishda ochiladi: http://localhost:3000
 timeout /t 5 >nul
-start http://localhost:5173
+start http://localhost:3000
+
+echo.
+echo ===================================================
+echo Dastur ishlayapti. Dasturni yopish uchun shu oynani yoping.
+echo ===================================================
+pause

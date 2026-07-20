@@ -51,9 +51,8 @@ const initTelegramBot = () => {
     const mainMenu = {
       reply_markup: {
         keyboard: [
-          [{ text: "🔴 📅 Mening To'ylarim" }, { text: "🟢 👤 Kabinet" }],
-          [{ text: "💰 📊 Mening Oyligim" }, { text: "🔵 📞 Boshliq bilan aloqa" }],
-          [{ text: "🟡 ℹ️ Ma'lumotnoma" }]
+          [{ text: "🎥 📸 Mening To'ylarim" }, { text: "👤 ⚙️ Kabinet" }],
+          [{ text: "📞 🆘 Boshliq bilan aloqa" }, { text: "ℹ️ ❓ Ma'lumotnoma" }]
         ],
         resize_keyboard: true,
         persistent: true
@@ -107,32 +106,6 @@ const initTelegramBot = () => {
         bot.sendMessage(msg.chat.id, `📞 <b>TIM PRODUCTION STUDIYASI</b>\n\nBiron savol, texnik muammo yoki syomka bo'yicha tezkor aloqa kerak bo'lsa, studiya ma'muriyatiga bog'laning:\n\n📱 <b>Telefon:</b> +998 88 055 60 66\n📍 <b>Manzil:</b> Buxoro shahar, Markaziy studiya`, { parse_mode: 'HTML', ...mainMenu });
       }
 
-      if (text.includes("Mening Oyligim") || text.includes("Oyligim")) {
-        const user = await User.findOne({ telegramChatId: msg.chat.id.toString() });
-        if (user) {
-          const isEditor = user.profession === 'editor';
-          const isRoninchi = user.profession === 'roninchi';
-          const isFotograf = user.profession === 'fotograf';
-          
-          let events;
-          if (isEditor) {
-            events = await Event.find({ assignedEditors: user._id });
-          } else if (isRoninchi) {
-            events = await Event.find({ assignedRoninchis: user._id });
-          } else if (isFotograf) {
-            events = await Event.find({ assignedPhotographers: user._id });
-          } else {
-            events = await Event.find({ assignedOperators: user._id });
-          }
-
-          const completedEvents = events.filter(e => e.status === 'Topshirildi');
-          
-          const totalEarned = completedEvents.reduce((sum, e) => sum + (isEditor ? (e.editorFee || 0) : (isRoninchi ? (e.roninFee || 0) : (isFotograf ? (e.photoFee || 0) : (e.operatorFee || 0)))), 0);
-          
-          bot.sendMessage(msg.chat.id, `💰 <b>Sizning moliyaviy va ish statistikangiz:</b>\n\n💼 <b>Soha:</b> ${(user.profession || 'operator').toUpperCase()}\n📌 <b>Jami qatnashgan loyihalar:</b> ${events.length} ta\n🏁 <b>Topshirilgan (tugagan) loyihalar:</b> ${completedEvents.length} ta\n⏳ <b>Jarayondagi loyihalar:</b> ${events.length - completedEvents.length} ta\n\n💵 <b>ISHLAB TOPILGAN DAROMAD:</b> ${totalEarned.toLocaleString()} UZS\n\n💸 <i>Sizning ishlagan loyihalaringiz soni va oyligingiz studiya rahbari tomonidan xar bir loyiha budjetiga qarab hisoblanadi. Eng zo'rlar qatoridasiz!</i> 🚀`, { parse_mode: 'HTML', ...mainMenu });
-        }
-      }
-
       if (text.includes("Ma'lumotnoma")) {
         bot.sendMessage(msg.chat.id, `ℹ️ <b>BOTDAN FOYDALANISH QO'LLANMASI</b>\n\n1️⃣ <b>📅 Mening To'ylarim</b> — Sizga biriktirilgan barcha to'ylar ro'yxatini ko'rish.\n2️⃣ To'y xabarining ostidagi <b>rangli tugmalar</b> orqali syomka jarayonini belgilashingiz mumkin (Kutilmoqda 🟡, Syomka qilindi 🟣, Montajda 🔵, Tayyor 🟢, Topshirildi 🏁).\n3️⃣ Har bir o'zgartirgan holatingiz darhol studiya boshlig'ining saytidagi CRM jadvalida avtomat yangilanadi!`, { parse_mode: 'HTML', ...mainMenu });
       }
@@ -141,9 +114,9 @@ const initTelegramBot = () => {
         const user = await User.findOne({ telegramChatId: msg.chat.id.toString() });
         if (!user) return bot.sendMessage(msg.chat.id, "❌ Siz hali tizimga ulanmagansiz. Sayt orqali ulanish linkini bosing.");
 
-        const isEditor = user.profession === 'editor';
-        const isRoninchi = user.profession === 'roninchi';
-        const isFotograf = user.profession === 'fotograf';
+        const isEditor = user.professions?.includes('editor');
+        const isRoninchi = user.professions?.includes('roninchi');
+        const isFotograf = user.professions?.includes('fotograf');
         
         let events;
         if (isEditor) {

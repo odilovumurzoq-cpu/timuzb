@@ -215,4 +215,21 @@ const kickUserFromGroup = async (chatId, username) => {
   }
 };
 
-module.exports = { initUserbot, sendUserbotMessage, getTelegramMessages, createWeddingGroup, kickUserFromGroup };
+
+const deleteWeddingGroup = async (chatId) => {
+  try {
+    if (!client || !client.connected) {
+      await initUserbot();
+    }
+    await client.invoke(new Api.messages.DeleteChat({
+        chatId: BigInt(chatId)
+    }));
+    console.log('✅ Guruh ochirildi (ChatID: ' + chatId + ')');
+    return true;
+  } catch (err) {
+    console.error('❌ Guruhni ochirishda xatolik:', err.message || err);
+    return false;
+  }
+};
+
+module.exports = { initUserbot, sendUserbotMessage, getTelegramMessages, createWeddingGroup, kickUserFromGroup, deleteWeddingGroup };

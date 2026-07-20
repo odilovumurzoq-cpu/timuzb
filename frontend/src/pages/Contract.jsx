@@ -12,7 +12,7 @@ function Contract() {
         const config = { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } };
         const { data } = await axios.get(`/api/events/${id}`, config);
         setEvent(data);
-        setTimeout(() => window.print(), 1000); // Auto-print dialog after render
+        setTimeout(() => window.print(), 1500); // Auto-print dialog after render
       } catch (error) {
         console.error(error);
       }
@@ -20,167 +20,140 @@ function Contract() {
     fetchEvent();
   }, [id]);
 
-  if (!event) return <div style={{ padding: '2rem', textAlign: 'center' }}>Shartnoma yuklanmoqda...</div>;
+  if (!event) return <div style={{ padding: '2rem', textAlign: 'center', color: 'black' }}>Shartnoma yuklanmoqda...</div>;
 
   const dateStr = new Date(event.date).toLocaleDateString('uz-UZ', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'Asia/Tashkent' });
+  const qrData = encodeURIComponent(`TimProduction Loyiha: ${event.title}\nSana: ${dateStr}\nTelefon: ${event.clientPhone}`);
 
   return (
     <div style={{
       background: '#fff',
-      color: '#000',
-      fontFamily: '"Times New Roman", Times, serif',
-      padding: '40px',
-      maxWidth: '800px',
+      color: '#1a1a1a',
+      fontFamily: '"Montserrat", "Helvetica Neue", sans-serif',
+      padding: '50px',
+      maxWidth: '900px',
       margin: '0 auto',
       minHeight: '100vh',
       boxSizing: 'border-box'
     }}>
       <style>
         {`
+          @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800&family=Playfair+Display:ital,wght@0,600;1,600&display=swap');
           @media print {
             body * { visibility: hidden; }
             #printable-contract, #printable-contract * { visibility: visible; }
-            #printable-contract { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; }
+            #printable-contract { position: absolute; left: 0; top: 0; width: 100%; padding: 0; }
             .no-print { display: none; }
           }
-          h1, h2, h3 { font-family: 'Playfair Display', "Times New Roman", serif; }
         `}
       </style>
       
-      <div id="printable-contract">
+      <div id="printable-contract" style={{ background: '#fff', position: 'relative' }}>
         
+        {/* Decorative Header Bar */}
+        <div style={{ height: '8px', background: 'linear-gradient(90deg, #1e3a8a, #3b82f6, #93c5fd)', marginBottom: '40px', borderRadius: '4px' }}></div>
+
         {/* HEADER */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '2px solid #000', paddingBottom: '20px', marginBottom: '30px' }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: '28px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px' }}>TIM PRODUCTION</h1>
-            <p style={{ margin: '5px 0 0', fontSize: '14px', color: '#555' }}>Video & Foto xizmatlari</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '30px', marginBottom: '40px', borderBottom: '1px solid #eaeaea' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <div style={{ width: '60px', height: '60px', background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)', borderRadius: '12px', display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'white', fontWeight: 800, fontSize: '28px', fontFamily: '"Playfair Display", serif' }}>
+              TP
+            </div>
+            <div>
+              <h1 style={{ margin: 0, fontSize: '32px', fontWeight: '800', letterSpacing: '1px', color: '#1e3a8a' }}>TIM PRODUCTION</h1>
+              <p style={{ margin: '5px 0 0', fontSize: '14px', color: '#64748b', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '2px' }}>Premium Video & Foto</p>
+            </div>
           </div>
-          <div style={{ textAlign: 'right', fontSize: '14px' }}>
-            <p style={{ margin: '2px 0' }}>Toshkent shahar, Chilonzor tumani</p>
-            <p style={{ margin: '2px 0' }}>Tel: +998 90 123 45 67</p>
-            <p style={{ margin: '2px 0' }}>Sana: {new Date().toLocaleDateString('uz-UZ')}</p>
+          <div style={{ textAlign: 'right', fontSize: '14px', color: '#475569' }}>
+            <p style={{ margin: '4px 0' }}>📍 Toshkent shahar, Markaziy ofis</p>
+            <p style={{ margin: '4px 0' }}>📞 +998 88 055 60 66</p>
+            <p style={{ margin: '4px 0' }}>🕒 Hujjat sanasi: <strong>{new Date().toLocaleDateString('uz-UZ')}</strong></p>
           </div>
         </div>
 
         {/* TITLE */}
-        <h2 style={{ textAlign: 'center', fontSize: '24px', margin: '0 0 40px', textDecoration: 'underline' }}>
-          XIZMAT KO'RSATISH SHARTNOMASI
-        </h2>
-
-        {/* CLIENT DETAILS */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px' }}>
-          <div style={{ width: '48%' }}>
-            <h3 style={{ fontSize: '16px', borderBottom: '1px solid #ccc', paddingBottom: '5px', marginBottom: '10px' }}>Tadbir Ma'lumotlari</h3>
-            <p style={{ margin: '8px 0' }}><strong>Loyiha turi:</strong> {event.eventType || "To'y"}</p>
-            <p style={{ margin: '8px 0' }}><strong>Tadbir sanasi:</strong> {dateStr}</p>
-            <p style={{ margin: '8px 0' }}><strong>To'yxona/Manzil:</strong> {event.venue}, {event.location}</p>
-          </div>
-          <div style={{ width: '48%' }}>
-            <h3 style={{ fontSize: '16px', borderBottom: '1px solid #ccc', paddingBottom: '5px', marginBottom: '10px' }}>Mijoz Ma'lumotlari</h3>
-            {event.groomName || event.brideName ? (
-              <>
-                <p style={{ margin: '8px 0' }}><strong>Kuyov Ismi:</strong> {event.groomName || '-'}</p>
-                <p style={{ margin: '8px 0' }}><strong>Kelin Ismi:</strong> {event.brideName || '-'}</p>
-              </>
-            ) : (
-              <p style={{ margin: '8px 0' }}><strong>Mijoz Ismi:</strong> {event.clientName || event.title}</p>
-            )}
-            <p style={{ margin: '8px 0' }}><strong>Telefon:</strong> {event.clientPhone}</p>
-          </div>
+        <div style={{ textAlign: 'center', marginBottom: '50px' }}>
+          <h2 style={{ fontSize: '28px', margin: '0 0 10px', fontFamily: '"Playfair Display", serif', color: '#0f172a' }}>
+            XIZMAT KO'RSATISH SHARTNOMASI
+          </h2>
+          <p style={{ color: '#64748b', margin: 0, fontSize: '15px' }}>№ {event._id.substring(event._id.length - 6).toUpperCase()} - Hujjat</p>
         </div>
 
-        {/* PACKAGE DETAILS */}
-        <div style={{ marginBottom: '40px' }}>
-          <h3 style={{ fontSize: '16px', borderBottom: '1px solid #ccc', paddingBottom: '5px', marginBottom: '15px' }}>Kelishilgan Xizmatlar</h3>
-          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
-            <thead>
-              <tr style={{ background: '#f5f5f5' }}>
-                <th style={{ padding: '10px', border: '1px solid #ddd' }}>Xizmat Turi</th>
-                <th style={{ padding: '10px', border: '1px solid #ddd' }}>Izoh</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td style={{ padding: '10px', border: '1px solid #ddd' }}>Video xizmati</td>
-                <td style={{ padding: '10px', border: '1px solid #ddd' }}>{event.cameraCount || 1} ta kamera</td>
-              </tr>
-              {event.assignedRoninchis && event.assignedRoninchis.length > 0 && (
-                <tr>
-                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>Roninchi / Kvadrokopter</td>
-                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>Kiritilgan</td>
-                </tr>
-              )}
-              {event.assignedPhotographers && event.assignedPhotographers.length > 0 && (
-                <tr>
-                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>Foto xizmati</td>
-                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>Kiritilgan</td>
-                </tr>
-              )}
-              {event.album && (
-                <tr>
-                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>Fotokitob / Albom</td>
-                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>{event.album}</td>
-                </tr>
-              )}
-              {event.caseType && (
-                <tr>
-                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>Fleshka / Keys</td>
-                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>{event.caseType}</td>
-                </tr>
-              )}
-              {event.comment && (
-                <tr>
-                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>Qo'shimcha kelishuv</td>
-                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>{event.comment}</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+        {/* DETAILS GRID */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '40px', background: '#f8fafc', padding: '25px', borderRadius: '16px', border: '1px solid #e2e8f0' }}>
+          <div style={{ width: '45%' }}>
+            <h3 style={{ fontSize: '14px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '15px' }}>Tadbir Ma'lumotlari</h3>
+            <p style={{ margin: '10px 0', fontSize: '15px' }}><strong style={{ color: '#0f172a' }}>Loyiha turi:</strong> {event.eventType || "To'y"}</p>
+            <p style={{ margin: '10px 0', fontSize: '15px' }}><strong style={{ color: '#0f172a' }}>Tadbir sanasi:</strong> {dateStr}</p>
+            <p style={{ margin: '10px 0', fontSize: '15px' }}><strong style={{ color: '#0f172a' }}>Manzil:</strong> {event.venue || '-'}, {event.location || '-'}</p>
+          </div>
+          
+          <div style={{ width: '1px', background: '#cbd5e1' }}></div>
+          
+          <div style={{ width: '45%' }}>
+            <h3 style={{ fontSize: '14px', color: '#3b82f6', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '15px' }}>Mijoz Ma'lumotlari</h3>
+            <p style={{ margin: '10px 0', fontSize: '15px' }}><strong style={{ color: '#0f172a' }}>Ismi:</strong> {event.clientName || event.title}</p>
+            <p style={{ margin: '10px 0', fontSize: '15px' }}><strong style={{ color: '#0f172a' }}>Telefon:</strong> {event.clientPhone}</p>
+          </div>
         </div>
 
         {/* FINANCIALS */}
         <div style={{ marginBottom: '50px' }}>
-          <h3 style={{ fontSize: '16px', borderBottom: '1px solid #ccc', paddingBottom: '5px', marginBottom: '15px' }}>Moliyaviy Hisob-kitob</h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '15px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '5px', borderBottom: '1px dashed #eee' }}>
-              <span>Umumiy Kelishilgan Summa:</span>
-              <strong>{event.budget?.toLocaleString()} UZS</strong>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '5px', borderBottom: '1px dashed #eee' }}>
-              <span>To'langan Avans Summasi:</span>
-              <strong>{event.advancePayment?.toLocaleString()} UZS</strong>
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', paddingBottom: '5px', borderBottom: '2px solid #000', fontSize: '18px', marginTop: '5px' }}>
-              <strong>Qolgan Qarz Summasi:</strong>
-              <strong>{((event.budget || 0) - (event.advancePayment || 0)).toLocaleString()} UZS</strong>
-            </div>
+          <h3 style={{ fontSize: '18px', color: '#1e3a8a', borderBottom: '2px solid #e2e8f0', paddingBottom: '10px', marginBottom: '20px' }}>Moliyaviy Hisob-kitoblar</h3>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '15px' }}>
+            <tbody>
+              <tr>
+                <td style={{ padding: '15px', borderBottom: '1px solid #e2e8f0', color: '#475569' }}>Umumiy Kelishilgan Summa:</td>
+                <td style={{ padding: '15px', borderBottom: '1px solid #e2e8f0', fontWeight: 'bold', textAlign: 'right', fontSize: '18px' }}>{new Intl.NumberFormat('uz-UZ').format(event.budget)} UZS</td>
+              </tr>
+              <tr>
+                <td style={{ padding: '15px', borderBottom: '1px solid #e2e8f0', color: '#475569' }}>Oldindan to'lov (Zaklad):</td>
+                <td style={{ padding: '15px', borderBottom: '1px solid #e2e8f0', fontWeight: 'bold', textAlign: 'right', color: '#10b981' }}>{new Intl.NumberFormat('uz-UZ').format(event.advancePayment)} UZS</td>
+              </tr>
+              <tr style={{ background: '#f8fafc' }}>
+                <td style={{ padding: '15px', borderBottom: '1px solid #e2e8f0', color: '#0f172a', fontWeight: 'bold' }}>Qoldiq Summa:</td>
+                <td style={{ padding: '15px', borderBottom: '1px solid #e2e8f0', fontWeight: 'bold', textAlign: 'right', color: '#ef4444', fontSize: '18px' }}>{new Intl.NumberFormat('uz-UZ').format((event.budget || 0) - (event.advancePayment || 0))} UZS</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* QR CODE & SIGNATURES */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '60px' }}>
+          <div style={{ width: '30%' }}>
+            <p style={{ margin: '0 0 10px', fontSize: '14px', color: '#64748b', fontWeight: 600 }}>Tashkilotchi (TimProduction):</p>
+            <div style={{ borderBottom: '1px solid #000', height: '40px', width: '100%' }}></div>
+            <p style={{ fontSize: '12px', margin: '5px 0 0', color: '#94a3b8' }}>(Imzo)</p>
+          </div>
+          
+          <div style={{ textAlign: 'center' }}>
+            <img 
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${qrData}`} 
+              alt="QR Code" 
+              style={{ width: '120px', height: '120px', border: '1px solid #e2e8f0', padding: '10px', borderRadius: '12px' }} 
+            />
+            <p style={{ fontSize: '11px', color: '#64748b', marginTop: '8px' }}>Hujjat haqiqiyligini tekshirish</p>
+          </div>
+
+          <div style={{ width: '30%' }}>
+            <p style={{ margin: '0 0 10px', fontSize: '14px', color: '#64748b', fontWeight: 600 }}>Buyurtmachi (Mijoz):</p>
+            <div style={{ borderBottom: '1px solid #000', height: '40px', width: '100%' }}></div>
+            <p style={{ fontSize: '12px', margin: '5px 0 0', color: '#94a3b8' }}>(Imzo)</p>
           </div>
         </div>
 
-        {/* SIGNATURES */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '60px' }}>
-          <div style={{ width: '40%', textAlign: 'center' }}>
-            <p style={{ margin: '0 0 40px', fontWeight: 'bold' }}>Ijrochi (Tim Production):</p>
-            <div style={{ borderBottom: '1px solid #000', width: '100%' }}></div>
-            <p style={{ margin: '5px 0', fontSize: '14px', color: '#555' }}>(Imzo)</p>
-          </div>
-          <div style={{ width: '40%', textAlign: 'center' }}>
-            <p style={{ margin: '0 0 40px', fontWeight: 'bold' }}>Buyurtmachi (Mijoz):</p>
-            <div style={{ borderBottom: '1px solid #000', width: '100%' }}></div>
-            <p style={{ margin: '5px 0', fontSize: '14px', color: '#555' }}>(Imzo)</p>
-          </div>
+        {/* FOOTER MESSAGE */}
+        <div style={{ marginTop: '50px', textAlign: 'center', fontSize: '13px', color: '#94a3b8', fontStyle: 'italic', borderTop: '1px solid #eaeaea', paddingTop: '20px' }}>
+          * Ushbu shartnoma mijoz va TimProduction o'rtasidagi kelishuvni tasdiqlaydi. 
+          Kelgusi matnni siz yuborganingizdan so'ng, tizim unga moslashadi.
         </div>
-
       </div>
-
-      <div className="no-print" style={{ textAlign: 'center', marginTop: '40px' }}>
-        <button onClick={() => window.print()} style={{
-          padding: '10px 30px', background: '#000', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '16px', fontWeight: 'bold'
-        }}>
-          PDF Yuklab Olish / Chop Etish
+      
+      <div className="no-print" style={{ textAlign: 'center', marginTop: '30px' }}>
+        <button onClick={() => window.print()} style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '10px 24px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '16px' }}>
+          Chop etish (Print)
         </button>
       </div>
-
     </div>
   );
 }

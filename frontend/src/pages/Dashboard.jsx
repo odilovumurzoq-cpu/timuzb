@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Plus, Trash2, Edit, Calendar as CalendarIcon, Users, MapPin, Video, LayoutDashboard, Save, X, BarChart2, BarChart3, Clock, DollarSign, LogOut, CheckCircle, Search, MessageCircle, Send, Link as LinkIcon, Star, Copy, Archive, ListTodo, ExternalLink, Download, Wallet, Sun, Moon, Smartphone } from 'lucide-react';
+import AIChatWindow from '../components/AIChatWindow';
+import TelegramChatModal from '../components/TelegramChatModal';
+import { MessageCircle, Bot } from 'lucide-react';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
@@ -10,6 +13,10 @@ import * as XLSX from 'xlsx';
 const localizer = momentLocalizer(moment);
 
 function Dashboard({ user }) {
+  
+  const [aiChatOpen, setAiChatOpen] = useState(false);
+  const [chatPhone, setChatPhone] = useState(null);
+
   const [activeTab, setActiveTab] = useState('analytics'); // calendar, events, operators, analytics, finance, kanban, expenses
   const [events, setEvents] = useState([]);
   const [operators, setOperators] = useState([]);
@@ -29,12 +36,12 @@ function Dashboard({ user }) {
     document.body.className = theme === 'light' ? 'light-mode' : '';
   }, [theme]);
 
-  const [newOp, setNewOp] = useState({ username: '', password: '', fullName: '', telegramUsername: '', profession: 'operator' });
+  const [newOp, setNewOp] = useState({ username: '', password: '', fullName: '', telegramUsername: '', professions: ["operator"] });
   const [editOpId, setEditOpId] = useState(null);
 
   const [newEvent, setNewEvent] = useState({ 
     title: '', eventType: "To'y", date: '', location: '', venue: '', cameraCount: 1, assignedOperators: [], assignedEditors: [], assignedRoninchis: [], assignedPhotographers: [],
-    groomName: '', brideName: '', clientName: '', clientPhone: '', budget: 0, advancePayment: 0, operatorFee: 0, editorFee: 0, roninFee: 0, photoFee: 0, status: 'Kutilmoqda', comment: '', album: '', caseType: '' 
+    clientName: '', clientPhone: '', budget: 0, advancePayment: 0, status: 'Kutilmoqda', comment: '', album: '', caseType: '' 
   });
   const [editEventId, setEditEventId] = useState(null);
 
@@ -106,7 +113,7 @@ function Dashboard({ user }) {
       } else {
         await axios.post('/api/operators', newOp, config);
       }
-      setNewOp({ username: '', password: '', fullName: '', telegramUsername: '', profession: 'operator' });
+      setNewOp({ username: '', password: '', fullName: '', telegramUsername: '', professions: ["operator"] });
       setEditOpId(null);
       fetchData();
     } catch (error) {
@@ -116,14 +123,14 @@ function Dashboard({ user }) {
 
   const handleEditOperator = (op) => {
     setEditOpId(op._id);
-    setNewOp({ username: op.username, password: '', fullName: op.fullName, telegramUsername: op.telegramUsername || '', profession: op.profession || 'operator' });
+    setNewOp({ username: op.username, password: '', fullName: op.fullName, telegramUsername: op.telegramUsername || '', professions: op.professions || ["operator"] });
     setActiveTab('operators');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const cancelEditOperator = () => {
     setEditOpId(null);
-    setNewOp({ username: '', password: '', fullName: '', telegramUsername: '', profession: 'operator' });
+    setNewOp({ username: '', password: '', fullName: '', telegramUsername: '', professions: ["operator"] });
   };
 
   const handleDeleteOperator = async (id) => {
@@ -152,7 +159,7 @@ function Dashboard({ user }) {
       } else {
         await axios.post('/api/events', payload, config);
       }
-      setNewEvent({ title: '', eventType: "To'y", date: '', location: '', venue: '', cameraCount: 1, assignedOperators: [], assignedEditors: [], assignedRoninchis: [], assignedPhotographers: [], groomName: '', brideName: '', clientName: '', clientPhone: '', budget: 0, advancePayment: 0, operatorFee: 0, editorFee: 0, roninFee: 0, photoFee: 0, status: 'Kutilmoqda', comment: '', album: '', caseType: '' });
+      setNewEvent({ title: '', eventType: "To'y", date: '', location: '', venue: '', cameraCount: 1, assignedOperators: [], assignedEditors: [], assignedRoninchis: [], assignedPhotographers: [], clientName: '', clientPhone: '', budget: 0, advancePayment: 0, status: 'Kutilmoqda', comment: '', album: '', caseType: '' });
       setEditEventId(null);
       fetchData();
     } catch (error) {
@@ -177,16 +184,10 @@ function Dashboard({ user }) {
       assignedEditors: event.assignedEditors ? event.assignedEditors.map(op => op._id) : [],
       assignedRoninchis: event.assignedRoninchis ? event.assignedRoninchis.map(op => op._id) : [],
       assignedPhotographers: event.assignedPhotographers ? event.assignedPhotographers.map(op => op._id) : [],
-      groomName: event.groomName || '',
-      brideName: event.brideName || '',
       clientName: event.clientName || '',
       clientPhone: event.clientPhone || '',
       budget: event.budget || 0,
       advancePayment: event.advancePayment || 0,
-      operatorFee: event.operatorFee || 0,
-      editorFee: event.editorFee || 0,
-      roninFee: event.roninFee || 0,
-      photoFee: event.photoFee || 0,
       status: event.status || 'Kutilmoqda',
       comment: event.comment || '',
       album: event.album || '',
@@ -198,7 +199,7 @@ function Dashboard({ user }) {
 
   const cancelEditEvent = () => {
     setEditEventId(null);
-    setNewEvent({ title: '', eventType: "To'y", date: '', location: '', venue: '', cameraCount: 1, assignedOperators: [], assignedEditors: [], assignedRoninchis: [], assignedPhotographers: [], groomName: '', brideName: '', clientName: '', clientPhone: '', budget: 0, advancePayment: 0, operatorFee: 0, editorFee: 0, roninFee: 0, photoFee: 0, status: 'Kutilmoqda', comment: '', album: '', caseType: '' });
+    setNewEvent({ title: '', eventType: "To'y", date: '', location: '', venue: '', cameraCount: 1, assignedOperators: [], assignedEditors: [], assignedRoninchis: [], assignedPhotographers: [], clientName: '', clientPhone: '', budget: 0, advancePayment: 0, status: 'Kutilmoqda', comment: '', album: '', caseType: '' });
   };
 
   const handleDeleteEvent = async (id) => {
@@ -715,20 +716,7 @@ function Dashboard({ user }) {
                   <input type="text" className="form-input" value={newEvent.title} onChange={e => setNewEvent({...newEvent, title: e.target.value})} placeholder="Agar bo'sh qoldirsangiz ismlardan olinadi" />
                 </div>
                 <div className="grid grid-cols-2" style={{ gap: '1rem' }}>
-                  <div className="form-group">
-                    <label className="form-label">Kuyov Ismi</label>
-                    <input type="text" className="form-input" value={newEvent.groomName} onChange={e => {
-                        const newTitle = `${e.target.value} & ${newEvent.brideName}`;
-                        setNewEvent({...newEvent, groomName: e.target.value, title: newTitle})
-                    }} />
-                  </div>
-                  <div className="form-group">
-                    <label className="form-label">Kelin Ismi</label>
-                    <input type="text" className="form-input" value={newEvent.brideName} onChange={e => {
-                        const newTitle = `${newEvent.groomName} & ${e.target.value}`;
-                        setNewEvent({...newEvent, brideName: e.target.value, title: newTitle})
-                    }} />
-                  </div>
+                  
                 </div>
                 <div className="grid grid-cols-2" style={{ gap: '1rem' }}>
                   <div className="form-group">
@@ -834,7 +822,7 @@ function Dashboard({ user }) {
                 <div className="form-group">
                   <label className="form-label">Kameramanlarni tanlash</label>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    {operators.filter(o => o.profession !== 'editor').map(op => (
+                    {operators.filter(o => o.professions?.includes('operator')).map(op => (
                       <label key={op._id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'white', userSelect: 'none' }}>
                         <input 
                           type="checkbox" 
@@ -850,7 +838,7 @@ function Dashboard({ user }) {
                 <div className="form-group">
                   <label className="form-label">Montajyorlarni tanlash</label>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    {operators.filter(o => o.profession === 'editor').map(op => (
+                    {operators.filter(o => o.professions?.includes('editor')).map(op => (
                       <label key={op._id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'white', userSelect: 'none' }}>
                         <input 
                           type="checkbox" 
@@ -866,7 +854,7 @@ function Dashboard({ user }) {
                 <div className="form-group">
                   <label className="form-label">Roninchilarni tanlash</label>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    {operators.filter(o => o.profession === 'roninchi').map(op => (
+                    {operators.filter(o => o.professions?.includes('roninchi')).map(op => (
                       <label key={op._id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'white', userSelect: 'none' }}>
                         <input 
                           type="checkbox" 
@@ -882,7 +870,7 @@ function Dashboard({ user }) {
                 <div className="form-group">
                   <label className="form-label">Fotograflarni tanlash</label>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    {operators.filter(o => o.profession === 'fotograf').map(op => (
+                    {operators.filter(o => o.professions?.includes('fotograf')).map(op => (
                       <label key={op._id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'white', userSelect: 'none' }}>
                         <input 
                           type="checkbox" 
@@ -921,7 +909,7 @@ function Dashboard({ user }) {
                           navigator.clipboard.writeText(link);
                           alert("Mijoz uchun kuzatish ssilkasi nusxalandi! Endi mijozga yuboring.\n" + link);
                         }} style={{ padding: '0.4rem 0.8rem', fontSize: '0.875rem' }} title="Mijoz Ssilkasi"><LinkIcon size={14} style={{marginRight: '4px'}} /> Nusxa</button>
-                        <a href={`/api/events/${event._id}/ics`} download className="btn btn-outline" style={{ padding: '0.4rem 0.8rem', fontSize: '0.875rem', textDecoration: 'none' }} title="Google/Apple Kalendarga Qo'shish"><CalendarIcon size={14} style={{marginRight: '4px'}} /> Kalendar</a>
+                        
                         <a href={`/contract/${event._id}`} target="_blank" rel="noreferrer" className="btn btn-outline" style={{ padding: '0.4rem 0.8rem', fontSize: '0.875rem', textDecoration: 'none', color: '#f59e0b', borderColor: '#f59e0b' }} title="Shartnoma (PDF) Yaratish">📄 Shartnoma</a>
                         {event.clientPhone && <button className="btn btn-info" onClick={() => openChat(event)} style={{ padding: '0.4rem 0.8rem', fontSize: '0.875rem', background: '#0088cc', color: 'white' }} title="Telegram Chat"><MessageCircle size={14} style={{marginRight: '4px'}} /> Chat</button>}
                         {event.clientPhone && <button className="btn btn-info" onClick={() => openSmsModal(event)} style={{ padding: '0.4rem 0.8rem', fontSize: '0.875rem', background: '#4CAF50', color: 'white' }} title="SMS Yuborish"><Smartphone size={14} style={{marginRight: '4px'}} /> SMS</button>}
@@ -969,7 +957,7 @@ function Dashboard({ user }) {
                           navigator.clipboard.writeText(link);
                           alert("Mijoz uchun kuzatish ssilkasi nusxalandi! Endi mijozga yuboring.\n" + link);
                         }} style={{ padding: '0.4rem 0.8rem', fontSize: '0.875rem' }} title="Mijoz Ssilkasi"><LinkIcon size={14} style={{marginRight: '4px'}} /> Nusxa</button>
-                        <a href={`/api/events/${event._id}/ics`} download className="btn btn-outline" style={{ padding: '0.4rem 0.8rem', fontSize: '0.875rem', textDecoration: 'none' }} title="Google/Apple Kalendarga Qo'shish"><CalendarIcon size={14} style={{marginRight: '4px'}} /> Kalendar</a>
+                        
                         <a href={`/contract/${event._id}`} target="_blank" rel="noreferrer" className="btn btn-outline" style={{ padding: '0.4rem 0.8rem', fontSize: '0.875rem', textDecoration: 'none', color: '#f59e0b', borderColor: '#f59e0b' }} title="Shartnoma (PDF) Yaratish">📄 Shartnoma</a>
                         {event.clientPhone && <button className="btn btn-info" onClick={() => openChat(event)} style={{ padding: '0.4rem 0.8rem', fontSize: '0.875rem', background: '#0088cc', color: 'white' }} title="Telegram Chat"><MessageCircle size={14} style={{marginRight: '4px'}} /> Chat</button>}
                         {event.clientPhone && <button className="btn btn-info" onClick={() => openSmsModal(event)} style={{ padding: '0.4rem 0.8rem', fontSize: '0.875rem', background: '#4CAF50', color: 'white' }} title="SMS Yuborish"><Smartphone size={14} style={{marginRight: '4px'}} /> SMS</button>}
@@ -1054,12 +1042,28 @@ function Dashboard({ user }) {
                 </div>
                 <div className="form-group">
                   <label className="form-label">Kasbi (Yo'nalishi)</label>
-                  <select className="form-input" value={newOp.profession || 'operator'} onChange={e => setNewOp({...newOp, profession: e.target.value})}>
-                    <option value="operator">Kameraman (Syomka)</option>
-                    <option value="editor">Montajyor</option>
-                    <option value="roninchi">Roninchi</option>
-                    <option value="fotograf">Fotograf</option>
-                  </select>
+                  
+                  <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                    {['operator', 'editor', 'roninchi', 'fotograf'].map(prof => (
+                      <label key={prof} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.05)', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer' }}>
+                        <input 
+                          type="checkbox" 
+                          checked={newOp.professions?.includes(prof)}
+                          onChange={e => {
+                            let updatedProfs = newOp.professions || [];
+                            if (e.target.checked) {
+                              updatedProfs = [...updatedProfs, prof];
+                            } else {
+                              updatedProfs = updatedProfs.filter(p => p !== prof);
+                            }
+                            setNewOp({...newOp, professions: updatedProfs});
+                          }}
+                        />
+                        {prof.charAt(0).toUpperCase() + prof.slice(1)}
+                      </label>
+                    ))}
+                  </div>
+
                 </div>
                 <div className="flex gap-2">
                   <button type="submit" className="btn w-full" style={{justifyContent: 'center'}}>
@@ -1080,7 +1084,7 @@ function Dashboard({ user }) {
                 {operators.map(op => (
                   <div key={op._id} className="flex justify-between items-center" style={{ padding: '1rem', background: 'var(--bg-dark)', borderRadius: '12px', border: '1px solid var(--border)' }}>
                     <div>
-                      <div style={{ fontWeight: 600, color: 'white', marginBottom: '0.25rem' }}>{op.fullName} <span style={{fontSize: '0.75rem', padding: '2px 6px', background: op.profession === 'editor' ? '#007bff' : op.profession === 'roninchi' ? '#ffc107' : op.profession === 'fotograf' ? '#dc3545' : '#28a745', color: op.profession === 'roninchi' ? '#000' : '#fff', borderRadius: '10px', marginLeft: '6px'}}>{(op.profession || 'operator').toUpperCase()}</span></div>
+                      <div style={{ fontWeight: 600, color: 'white', marginBottom: '0.25rem' }}>{op.fullName} <span style={{fontSize: '0.75rem', padding: '2px 6px', background: op.professions?.join(', ') === 'editor' ? '#007bff' : op.professions?.join(', ') === 'roninchi' ? '#ffc107' : op.professions?.join(', ') === 'fotograf' ? '#dc3545' : '#28a745', color: op.professions?.join(', ') === 'roninchi' ? '#000' : '#fff', borderRadius: '10px', marginLeft: '6px'}}>{(op.professions?.join(', ') || 'operator').toUpperCase()}</span></div>
                       <div className="text-muted" style={{ fontSize: '0.875rem' }}>@{op.username} {op.telegramUsername && `| Telegram: ${op.telegramUsername}`}</div>
                     </div>
                     <div className="flex gap-2">
@@ -1112,7 +1116,7 @@ function Dashboard({ user }) {
                 <tbody>
                   {operators.map(op => {
                     let completedCount = 0;
-                    let totalSalary = 0;
+                    let totalSalary = 0; /* removed */
                     
                     events.forEach(event => {
                       if (event.status === 'Topshirildi') {
@@ -1140,7 +1144,7 @@ function Dashboard({ user }) {
                     return (
                       <tr key={op._id}>
                         <td style={{ fontWeight: 600 }}>{op.fullName}</td>
-                        <td><span className="badge" style={{ backgroundColor: 'var(--primary)' }}>{op.profession}</span></td>
+                        <td><span className="badge" style={{ backgroundColor: 'var(--primary)' }}>{op.professions?.join(', ')}</span></td>
                         <td style={{ color: 'var(--success)' }}>{completedCount} ta loyiha</td>
                         <td style={{ fontWeight: 700, color: '#f59e0b' }}>{formatUZS(totalSalary)}</td>
                       </tr>
@@ -1256,23 +1260,7 @@ function Dashboard({ user }) {
       </button>
 
       {/* AI ASSISTANT CHAT WINDOW */}
-      {aiChatOpen && (
-        <div style={{ position: 'fixed', bottom: '90px', right: '20px', width: '350px', background: 'var(--bg-dark)', border: '1px solid var(--border)', borderRadius: '12px', boxShadow: '0 10px 40px rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <div style={{ padding: '1rem', background: 'var(--primary)', color: 'white', fontWeight: 600, display: 'flex', justifyContent: 'space-between' }}>
-            <span>Tim AI Yordamchi</span>
-            <X size={20} style={{ cursor: 'pointer' }} onClick={() => setAiChatOpen(false)} />
-          </div>
-          <div style={{ height: '350px', overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {aiChatMessages.map((msg, i) => (
-              <div key={i} style={{ alignSelf: msg.out ? 'flex-end' : 'flex-start', background: msg.out ? 'var(--primary)' : 'rgba(255,255,255,0.1)', color: 'white', padding: '0.75rem 1rem', borderRadius: '12px', maxWidth: '85%', fontSize: '0.9rem', lineHeight: '1.4' }}>
-                {msg.text}
-              </div>
-            ))}
-            {isAiLoading && (
-              <div style={{ alignSelf: 'flex-start', background: 'rgba(255,255,255,0.1)', padding: '0.5rem 1rem', borderRadius: '12px', color: 'var(--text-muted)' }}>
-                Yozmoqda...
-              </div>
-            )}
+      
           </div>
           <form onSubmit={sendAiMessage} style={{ padding: '0.75rem', borderTop: '1px solid var(--border)', display: 'flex', gap: '0.5rem' }}>
             <input type="text" className="form-input" style={{ padding: '0.5rem 1rem' }} placeholder="Savol bering..." value={aiMessageText} onChange={e => setAiMessageText(e.target.value)} />
