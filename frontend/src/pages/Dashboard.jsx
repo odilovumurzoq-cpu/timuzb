@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Plus, Trash2, Edit, Calendar as CalendarIcon, Users, MapPin, Video, LayoutDashboard, Save, X, BarChart2, BarChart3, Clock, DollarSign, LogOut, CheckCircle, Search, MessageCircle, Send, Link as LinkIcon, Star, Copy, Archive, ListTodo, ExternalLink, Download, Wallet, Sun, Moon, Smartphone } from 'lucide-react';
+import { Bot, Plus, Trash2, Edit, Calendar as CalendarIcon, Users, MapPin, Video, LayoutDashboard, Save, X, BarChart2, BarChart3, Clock, DollarSign, LogOut, CheckCircle, Search, MessageCircle, Send, Link as LinkIcon, Star, Copy, Archive, ListTodo, ExternalLink, Download, Wallet, Sun, Moon, Smartphone } from 'lucide-react';
 import AIChatWindow from '../components/AIChatWindow';
 import TelegramChatModal from '../components/TelegramChatModal';
-import { MessageCircle, Bot } from 'lucide-react';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
@@ -14,9 +13,9 @@ const localizer = momentLocalizer(moment);
 
 function Dashboard({ user }) {
   
+    
+      const [chatPhone, setChatPhone] = useState(null);
   const [aiChatOpen, setAiChatOpen] = useState(false);
-  const [chatPhone, setChatPhone] = useState(null);
-
   const [activeTab, setActiveTab] = useState('analytics'); // calendar, events, operators, analytics, finance, kanban, expenses
   const [events, setEvents] = useState([]);
   const [operators, setOperators] = useState([]);
@@ -47,41 +46,13 @@ function Dashboard({ user }) {
 
   const [newExpense, setNewExpense] = useState({ description: '', amount: 0, date: '' });
 
-  const [chatPhone, setChatPhone] = useState(null);
-  const [chatMessages, setChatMessages] = useState([]);
-  const [newMessageText, setNewMessageText] = useState("");
-  const [isChatLoading, setIsChatLoading] = useState(false);
-
+        
   const [smsModalOpen, setSmsModalOpen] = useState(false);
   const [smsPhone, setSmsPhone] = useState(null);
   const [smsText, setSmsText] = useState("");
 
-  const [aiChatOpen, setAiChatOpen] = useState(false);
-  const [aiMessageText, setAiMessageText] = useState("");
-  const [aiChatMessages, setAiChatMessages] = useState([
-    { out: false, text: "Assalomu alaykum! Men TimProduction AI yordamchisiman. Menga 'Bu oy qancha tushum bo'ldi?' kabi savollar berishingiz mumkin." }
-  ]);
-  const [isAiLoading, setIsAiLoading] = useState(false);
-
-  const sendAiMessage = async (e) => {
-    e.preventDefault();
-    if (!aiMessageText.trim()) return;
-    const msg = aiMessageText;
-    setAiChatMessages(prev => [...prev, { out: true, text: msg }]);
-    setAiMessageText("");
-    setIsAiLoading(true);
-    
-    try {
-      const config = { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } };
-      const { data } = await axios.post('/api/ai-chat', { message: msg }, config);
-      setAiChatMessages(prev => [...prev, { out: false, text: data.reply }]);
-    } catch (err) {
-      setAiChatMessages(prev => [...prev, { out: false, text: "Xatolik yuz berdi. Iltimos keyinroq urinib ko'ring." }]);
-    } finally {
-      setIsAiLoading(false);
-    }
-  };
-
+        
+  
   useEffect(() => {
     fetchData();
   }, []);
@@ -382,12 +353,7 @@ function Dashboard({ user }) {
     }
   };
 
-  const sendChatMessage = async (e) => {
-    e.preventDefault();
-    if (!newMessageText.trim() || !chatPhone) return;
-    try {
-      const config = { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } };
-      await axios.post(`/api/telegram/chat/${encodeURIComponent(chatPhone)}`, { message: newMessageText }, config);
+        await axios.post(`/api/telegram/chat/${encodeURIComponent(chatPhone)}`, { message: newMessageText }, config);
       setChatMessages([...chatMessages, { text: newMessageText, out: true, id: Date.now() }]);
       setNewMessageText("");
     } catch (error) {
@@ -1250,24 +1216,17 @@ function Dashboard({ user }) {
         </div>
       )}
 
-      {/* AI ASSISTANT FLOATING BUTTON */}
+            {/* Modals & Floating Buttons */}
       <button 
-        className="btn btn-primary" 
-        style={{ position: 'fixed', bottom: '20px', right: '20px', borderRadius: '50%', width: '60px', height: '60px', padding: 0, justifyContent: 'center', boxShadow: '0 10px 25px rgba(59, 130, 246, 0.5)', zIndex: 1000 }}
         onClick={() => setAiChatOpen(!aiChatOpen)}
+        style={{ position: 'fixed', bottom: '20px', right: '20px', width: '60px', height: '60px', borderRadius: '30px', background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)', color: 'white', border: 'none', boxShadow: '0 4px 20px rgba(59, 130, 246, 0.4)', cursor: 'pointer', zIndex: 999, display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+        title="AI Yordamchi"
       >
-        <MessageCircle size={28} />
+        <Bot size={30} />
       </button>
 
-      {/* AI ASSISTANT CHAT WINDOW */}
-      
-          </div>
-          <form onSubmit={sendAiMessage} style={{ padding: '0.75rem', borderTop: '1px solid var(--border)', display: 'flex', gap: '0.5rem' }}>
-            <input type="text" className="form-input" style={{ padding: '0.5rem 1rem' }} placeholder="Savol bering..." value={aiMessageText} onChange={e => setAiMessageText(e.target.value)} />
-            <button type="submit" className="btn btn-primary" style={{ padding: '0.5rem' }} disabled={isAiLoading}><Send size={18} /></button>
-          </form>
-        </div>
-      )}
+      <AIChatWindow isOpen={aiChatOpen} onClose={() => setAiChatOpen(false)} />
+      <TelegramChatModal chatPhone={chatPhone} onClose={() => setChatPhone(null)} />
 
     </div>
   );
