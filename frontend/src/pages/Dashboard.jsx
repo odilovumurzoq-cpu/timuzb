@@ -1141,7 +1141,7 @@ function Dashboard({ user }) {
                 {operators.map(op => (
                   <div key={op._id} className="flex justify-between items-center" style={{ padding: '1rem', background: 'var(--bg-dark)', borderRadius: '12px', border: '1px solid var(--border)' }}>
                     <div>
-                      <div style={{ fontWeight: 600, color: 'white', marginBottom: '0.25rem' }}>{op.fullName} <span style={{fontSize: '0.75rem', padding: '2px 6px', background: op.profession === 'editor' ? '#007bff' : op.profession === 'roninchi' ? '#ffc107' : op.profession === 'fotograf' ? '#dc3545' : '#28a745', color: op.profession === 'roninchi' ? '#000' : '#fff', borderRadius: '10px', marginLeft: '6px'}}>{(op.profession || 'operator').toUpperCase()}</span></div>
+                      <div style={{ fontWeight: 600, color: 'white', marginBottom: '0.25rem' }}>{op.fullName} <span style={{fontSize: '0.75rem', padding: '2px 6px', background: (Array.isArray(op.profession) ? op.profession[0] : op.profession) === 'editor' ? '#007bff' : (Array.isArray(op.profession) ? op.profession[0] : op.profession) === 'roninchi' ? '#ffc107' : (Array.isArray(op.profession) ? op.profession[0] : op.profession) === 'fotograf' ? '#dc3545' : '#28a745', color: (Array.isArray(op.profession) ? op.profession[0] : op.profession) === 'roninchi' ? '#000' : '#fff', borderRadius: '10px', marginLeft: '6px'}}>{(Array.isArray(op.profession) ? op.profession.join(', ') : (op.profession || 'operator')).toUpperCase()}</span></div>
                       <div className="text-muted" style={{ fontSize: '0.875rem' }}>@{op.username} {op.telegramUsername && `| Telegram: ${op.telegramUsername}`}</div>
                     </div>
                     <div className="flex gap-2">
