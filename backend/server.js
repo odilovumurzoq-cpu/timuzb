@@ -7,7 +7,7 @@ const cron = require('node-cron');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { sendUserbotMessage, getTelegramMessages } = require('./userbot');
+const { sendUserbotMessage, getTelegramMessages, createWeddingGroup, kickUserFromGroup } = require('./userbot');
 const { sendSMS } = require('./sms');
 
 // Global Anti-Crash Handlers (bot va server kutilmagan xatolarda o'chib qolmasligi uchun)
@@ -36,12 +36,10 @@ const path = require('path');
 
 const notifyOperators = async (event, isUpdate = false) => {
   try {
-    const formattedDate = new Date(event.date).toLocaleDateString('en-GB', { timeZone: 'Asia/Tashkent' });
-    const formattedTime = new Date(event.date).toLocaleTimeString('en-GB', { timeZone: 'Asia/Tashkent', hour: '2-digit', minute: '2-digit' });
-    
-    // EXCLUDE assignedEditors
+    const formattedDate = new Date(event.date).toLocaleDateString('uz-UZ', { timeZone: 'Asia/Tashkent', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     const allOpIds = [
       ...(event.assignedOperators || []),
+      ...(event.assignedEditors || []),
       ...(event.assignedRoninchis || []),
       ...(event.assignedPhotographers || [])
     ];
@@ -53,14 +51,14 @@ const notifyOperators = async (event, isUpdate = false) => {
     
     for (const op of operators) {
       if (op.telegramUsername) {
-        let msg = `🔔 DIQQAT! Sizga eslatma bor!\n` +
-          `${event.eventType || "Nikoh oqshomi"}\n` +
-          `${event.clientName || "Mijoz"}\n` +
+        const mapLink = `https://yandex.com/maps/?text=${encodeURIComponent(event.location)}`;
+        let msg = `🔔 DIQQAT! Eslatma!\n\n` +
+          `Yangi vazifa ${isUpdate ? 'yangilandi' : "qo'shildi"}!\n\n` +
           `📍 To'yxona: ${event.venue}\n` +
           `🗺 Manzil: ${event.location}\n` +
           `📹 Kamera soni: ${event.cameraCount || 1}\n` +
           `💬 Komment: ${event.comment || "Yo'q"}\n` +
-          `🕒 Vaqti: ${formattedDate}, ${formattedTime}\n\n` +
+          `🕒 Vaqti: ${new Date(event.date).toLocaleString('uz-UZ', { timeZone: 'Asia/Tashkent' })}\n\n` +
           `Iltimos, tayyorgarlik ko'ring!`;
         sendUserbotMessage(op.telegramUsername, msg, op.fullName);
       }
@@ -141,38 +139,23 @@ cron.schedule('0 * * * *', async () => {
     const upcomingEvents = await Event.find({
       date: { $gte: targetDateMin, $lte: targetDateMax },
       notified: false
-    })
-    .populate('assignedOperators')
-    .populate('assignedRoninchis')
-    .populate('assignedPhotographers');
+    }).populate('assignedOperators');
 
     for (const event of upcomingEvents) {
-      const formattedDate = new Date(event.date).toLocaleDateString('en-GB', { timeZone: 'Asia/Tashkent' });
-      const formattedTime = new Date(event.date).toLocaleTimeString('en-GB', { timeZone: 'Asia/Tashkent', hour: '2-digit', minute: '2-digit' });
-      const text = `🔔 DIQQAT! Sizga eslatma bor!\n` +
-        `${event.eventType || "Nikoh oqshomi"}\n` +
-        `${event.clientName || "Mijoz"}\n` +
+      const text = `Ertaga to'y bor!\n\n` +
         `📍 To'yxona: ${event.venue}\n` +
         `🗺 Manzil: ${event.location}\n` +
         `📹 Kamera soni: ${event.cameraCount || 1}\n` +
         `💬 Komment: ${event.comment || "Yo'q"}\n` +
-        `🕒 Vaqti: ${formattedDate}, ${formattedTime}\n\n` +
+        `🕒 Vaqti: ${new Date(event.date).toLocaleString('uz-UZ', { timeZone: 'Asia/Tashkent' })}\n\n` +
         `Iltimos, tayyorgarlik ko'ring!`;
 
-      const allStaff = [
-        ...(event.assignedOperators || []),
-        ...(event.assignedRoninchis || []),
-        ...(event.assignedPhotographers || [])
-      ];
-      // remove duplicates
-      const uniqueStaff = Array.from(new Set(allStaff.map(s => s._id.toString())))
-        .map(id => allStaff.find(s => s._id.toString() === id));
-
-      for (const operator of uniqueStaff) {
+      for (const operator of event.assignedOperators) {
         if (operator.telegramUsername) {
-            await sendUserbotMessage(operator.telegramUsername, text);
+            await sendUserbotMessage(operator.telegramUsername, `🔔 DIQQAT! Eslatma!\n\n` + text);
         } else if (operator.telegramChatId) {
-            await sendUserbotMessage(operator.telegramChatId, text);
+            // fallback if sendNotification exists in current scope or replace with appropriate bot call
+            await sendUserbotMessage(operator.telegramChatId, `🔔 *Eslatma!* ` + text);
         }
       }
       console.log("Cron job finished.");
@@ -331,7 +314,7 @@ app.post('/api/operators', authMiddleware, adminMiddleware, async (req, res) => 
   try {
     const { username, password, fullName, telegramUsername, profession } = req.body;
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newOperator = new User({ username, password: hashedPassword, fullName, telegramUsername, role: 'operator', profession: profession || ['operator'] });
+    const newOperator = new User({ username, password: hashedPassword, fullName, telegramUsername, role: 'operator', profession: profession || 'operator' });
     await newOperator.save();
     res.json(newOperator);
   } catch (error) {
@@ -370,6 +353,46 @@ app.post('/api/events', authMiddleware, adminMiddleware, async (req, res) => {
     await event.save();
 
     notifyOperators(event); // operatorlarga xabar yuborish
+
+    // Telegram Group Creation
+    try {
+      const populatedEvent = await Event.findById(event._id)
+        .populate('assignedOperators')
+        .populate('assignedEditors')
+        .populate('assignedRoninchis')
+        .populate('assignedPhotographers');
+
+      let usernames = [];
+      ['assignedOperators', 'assignedEditors', 'assignedRoninchis', 'assignedPhotographers'].forEach(field => {
+         if (populatedEvent[field]) {
+            populatedEvent[field].forEach(u => {
+               if (u.telegramUsername) usernames.push(u.telegramUsername);
+            });
+         }
+      });
+      
+      let clientContactName = "Mijoz";
+      if (event.groomName || event.brideName) {
+         clientContactName = `${event.groomName || ''} & ${event.brideName || ''} (${new Date(event.date).toLocaleDateString()})`.trim();
+      } else if (event.clientName) {
+         clientContactName = `${event.clientName} (${new Date(event.date).toLocaleDateString()})`;
+      }
+      
+      if (event.clientPhone) {
+        const title = `${event.groomName || 'Kuyov'} & ${event.brideName || 'Kelin'}`;
+        const chatId = await createWeddingGroup(title, event.clientPhone, clientContactName, usernames);
+        if (chatId) {
+           event.telegramChatId = chatId;
+           await event.save();
+        }
+        
+        // Send Premium Notification to Client
+        const msg = `Assalomu alaykum, ${clientContactName}!\n\nTimProduction sizning buyurtmangizni qabul qildi.\n\nTadbir: ${event.eventType}\nSana: ${new Date(event.date).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' })}\nKamera soni: ${event.cameraCount} ta\nAlbom: ${event.album || 'Yo\'q'}\n\nUmumiy summa: ${new Intl.NumberFormat('uz-UZ').format(event.budget)} so'm\nBerilgan avans: ${new Intl.NumberFormat('uz-UZ').format(event.advancePayment)} so'm\n\nIshonchingiz uchun rahmat!`;
+        sendUserbotMessage(event.clientPhone, msg, clientContactName).catch(err => console.log('Telegram xabar ketmadi:', err.message));
+      }
+    } catch(e) {
+       console.error("Guruh ochishda yoki SMS da xato:", e);
+    }
 
     res.json(event);
   } catch (error) {
@@ -429,21 +452,18 @@ app.post('/api/events/:id/send', authMiddleware, async (req, res) => {
       
     if (!event) return res.status(404).json({ message: 'Topilmadi' });
 
-    const formattedDate = new Date(event.date).toLocaleDateString('en-GB', { timeZone: 'Asia/Tashkent' });
-    const formattedTime = new Date(event.date).toLocaleTimeString('en-GB', { timeZone: 'Asia/Tashkent', hour: '2-digit', minute: '2-digit' });
-    const text = `🔔 DIQQAT! Sizga eslatma bor!\n` +
-      `${event.eventType || "Nikoh oqshomi"}\n` +
-      `${event.clientName || "Mijoz"}\n` +
-      `📍 To'yxona: ${event.venue}\n` +
-      `🗺 Manzil: ${event.location}\n` +
-      `📹 Kamera soni: ${event.cameraCount || 1}\n` +
-      `💬 Komment: ${event.comment || "Yo'q"}\n` +
-      `🕒 Vaqti: ${formattedDate}, ${formattedTime}\n\n` +
-      `Iltimos, tayyorgarlik ko'ring!`;
+    const text = `Ertaga to'y bor!\n\n` +
+        `📍 To'yxona: ${event.venue}\n` +
+        `🗺 Manzil: ${event.location}\n` +
+        `📹 Kamera soni: ${event.cameraCount || 1}\n` +
+        `💬 Komment: ${event.comment || "Yo'q"}\n` +
+        `🕒 Vaqti: ${new Date(event.date).toLocaleString('uz-UZ', { timeZone: 'Asia/Tashkent' })}\n\n` +
+        `Iltimos, tayyorgarlik ko'ring!`;
 
     let sent = 0;
     const allStaff = [
       ...event.assignedOperators,
+      ...event.assignedEditors,
       ...event.assignedRoninchis,
       ...event.assignedPhotographers
     ];
@@ -454,7 +474,7 @@ app.post('/api/events/:id/send', authMiddleware, async (req, res) => {
 
     for (const op of uniqueStaff) {
         if (op.telegramUsername) {
-            await sendUserbotMessage(op.telegramUsername, text);
+            await sendUserbotMessage(op.telegramUsername, `🔔 DIQQAT! Eslatma!\n\n` + text);
             sent++;
         }
     }
@@ -469,85 +489,50 @@ app.post('/api/events/:id/send', authMiddleware, async (req, res) => {
   }
 });
 
-app.post('/api/events/:id/freelancer', authMiddleware, adminMiddleware, async (req, res) => {
-  try {
-    const event = await Event.findById(req.params.id);
-    if (!event) return res.status(404).json({ message: 'Topilmadi' });
-
-    if (!event.freelancerToken) {
-      const crypto = require('crypto');
-      event.freelancerToken = crypto.randomBytes(16).toString('hex');
-      await event.save();
-    }
-    
-    res.json({ token: event.freelancerToken });
-  } catch (error) {
-    res.status(500).json({ message: 'Xatolik' });
-  }
-});
-
-app.get('/api/freelancer/:token', async (req, res) => {
-  try {
-    const event = await Event.findOne({ freelancerToken: req.params.token });
-    if (!event) return res.status(404).json({ message: "Ruxsat yo'q yoki topilmadi" });
-
-    res.json({
-      title: event.title,
-      eventType: event.eventType,
-      date: event.date,
-      venue: event.venue,
-      location: event.location,
-      cameraCount: event.cameraCount,
-      status: event.status,
-      clientName: event.clientName
-    });
-  } catch (error) {
-    res.status(500).json({ message: 'Xatolik' });
-  }
-});
-
-app.post('/api/events/:id/chat', authMiddleware, async (req, res) => {
-  try {
-    const event = await Event.findById(req.params.id);
-    if (!event) return res.status(404).json({ message: 'Topilmadi' });
-    
-    event.chatMessages.push({
-      senderName: req.user.username,
-      senderRole: req.user.role,
-      text: req.body.text
-    });
-    
-    await event.save();
-    res.json(event.chatMessages);
-  } catch (error) {
-    res.status(500).json({ message: 'Xatolik' });
-  }
-});
-
 app.put('/api/events/:id', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const oldEvent = await Event.findById(req.params.id);
     const event = await Event.findByIdAndUpdate(req.params.id, req.body, { new: true });
     
-    if (oldEvent) {
-      if (oldEvent.status !== 'Tayyor' && event.status === 'Tayyor') {
-        if (event.clientPhone) {
-          const contactName = `${event.clientName || 'Mijoz'} ${new Date(event.date).toLocaleDateString('uz-UZ', { timeZone: 'Asia/Tashkent', day: '2-digit', month: '2-digit', year: 'numeric' })}`;
-          let msg = `Assalomu alaykum, ${event.clientName || 'Mijoz'}! 👋\n\nSizning videongiz tayyor bo'ldi! 🎉\nIltimos, Tim Production ofisidan kelib olib keting.`;
-          sendUserbotMessage(event.clientPhone, msg, contactName).catch(err => console.log('Telegram xabar ketmadi:', err.message));
+    const populatedEvent = await Event.findById(event._id)
+        .populate('assignedOperators')
+        .populate('assignedRoninchis')
+        .populate('assignedPhotographers');
+
+    // Kick users if status changed to Syomka qilindi
+    if (oldEvent && oldEvent.status !== 'Syomka qilindi' && event.status === 'Syomka qilindi' && event.telegramChatId) {
+       let toKick = [];
+       ['assignedOperators', 'assignedRoninchis', 'assignedPhotographers'].forEach(field => {
+           if (populatedEvent[field]) {
+               populatedEvent[field].forEach(u => {
+                   if (u.telegramUsername) toKick.push(u.telegramUsername);
+               });
+           }
+       });
+       for (let un of toKick) {
+           await kickUserFromGroup(event.telegramChatId, un);
+       }
+    }
+
+    // Premium message if status changed to Topshirildi
+    if (oldEvent && oldEvent.status !== 'Topshirildi' && event.status === 'Topshirildi') {
+      if (event.clientPhone) {
+        const clientNameStr = (event.groomName || event.brideName) ? `${event.groomName || ''} & ${event.brideName || ''}` : (event.clientName || 'Hurmatli Mijoz');
+        const contactName = `${clientNameStr} ${new Date(event.date).toLocaleDateString()}`;
+        
+        let msg = `Assalomu alaykum, ${clientNameStr}!\n\nSizning videongiz tayyor bo'ldi va muvaffaqiyatli topshirildi! 🎉\nOila qurishingiz bilan chin qalbdan tabriklaymiz. Hayotingiz doimo baxt, quvonch va go'zal lahzalarga to'la bo'lishini tilab qolamiz. 🌟\n\nBizning xizmatimizdan foydalanganingiz uchun TimProduction jamoasi nomidan tashakkur bildiramiz! 🤝`;
+        
+        if (event.videoLink) {
+           msg += `\n\n🎥 Video uchun havola: ${event.videoLink}`;
         }
-      }
-      if (oldEvent.status !== 'Topshirildi' && event.status === 'Topshirildi') {
-        if (event.clientPhone) {
-          const contactName = `${event.clientName || 'Mijoz'} ${new Date(event.date).toLocaleDateString('uz-UZ', { timeZone: 'Asia/Tashkent', day: '2-digit', month: '2-digit', year: 'numeric' })}`;
-          let msg = `Assalomu alaykum, ${event.clientName || 'Mijoz'}! 👋\n\nBizni tanlaganingiz uchun tashakkur! 🎥✨`;
-          if (event.videoLink) {
-             msg += `\n\nVideo uchun havola: ${event.videoLink}`;
-          }
-          sendUserbotMessage(event.clientPhone, msg, contactName).catch(err => console.log('Telegram xabar ketmadi:', err.message));
-        }
+        
+        msg += `\n\n⭐ Iltimos, xizmat sifatini baholash uchun quyidagi havolaga kiring:\nhttps://timproduction.uz/rate/${event._id}`;
+        
+        sendUserbotMessage(event.clientPhone, msg, contactName).catch(err => console.log('Telegram xabar ketmadi:', err.message));
       }
     }
+
+    notifyOperators(event, true);
     res.json(event);
   } catch (error) {
     res.status(400).json({ message: 'Xatolik' });
@@ -569,17 +554,10 @@ app.put('/api/events/:id/status', authMiddleware, async (req, res) => {
     
     await event.save();
 
-    if (oldStatus !== 'Tayyor' && event.status === 'Tayyor') {
-      if (event.clientPhone) {
-        const contactName = `${event.clientName || 'Mijoz'} ${new Date(event.date).toLocaleDateString('uz-UZ', { timeZone: 'Asia/Tashkent', day: '2-digit', month: '2-digit', year: 'numeric' })}`;
-        let msg = `Assalomu alaykum, ${event.clientName || 'Mijoz'}! 👋\n\nSizning videongiz tayyor bo'ldi! 🎉\nIltimos, Tim Production ofisidan kelib olib keting.`;
-        sendUserbotMessage(event.clientPhone, msg, contactName).catch(err => console.log('Telegram xabar ketmadi:', err.message));
-      }
-    }
     if (oldStatus !== 'Topshirildi' && event.status === 'Topshirildi') {
       if (event.clientPhone) {
         const contactName = `${event.clientName || 'Mijoz'} ${new Date(event.date).toLocaleDateString('uz-UZ', { timeZone: 'Asia/Tashkent', day: '2-digit', month: '2-digit', year: 'numeric' })}`;
-        let msg = `Assalomu alaykum, ${event.clientName || 'Mijoz'}! 👋\n\nBizni tanlaganingiz uchun tashakkur! 🎥✨`;
+        let msg = `Assalomu alaykum, ${event.clientName || 'Mijoz'}! 👋\n\nSizning videongiz tayyor bo'ldi! 🎉\nIltimos, Tim Production ofisidan kelib olib keting.\n\nBizni tanlaganingiz uchun tashakkur! 🎥✨`;
         if (event.videoLink) {
            msg += `\n\nVideo uchun havola: ${event.videoLink}`;
         }
@@ -758,6 +736,7 @@ setInterval(async () => {
       // Notify operators
       const allOpIds = [
         ...(event.assignedOperators || []),
+        ...(event.assignedEditors || []),
         ...(event.assignedRoninchis || []),
         ...(event.assignedPhotographers || [])
       ];
@@ -766,18 +745,8 @@ setInterval(async () => {
         const operators = await User.find({ _id: { $in: uniqueOpIds } });
         for (const op of operators) {
           if (op.telegramUsername) {
-            const formattedDate = new Date(event.date).toLocaleDateString('en-GB', { timeZone: 'Asia/Tashkent' });
-            const formattedTime = new Date(event.date).toLocaleTimeString('en-GB', { timeZone: 'Asia/Tashkent', hour: '2-digit', minute: '2-digit' });
-            const text = `🔔 DIQQAT! Sizga eslatma bor!\n` +
-              `${event.eventType || "Nikoh oqshomi"}\n` +
-              `${event.clientName || "Mijoz"}\n` +
-              `📍 To'yxona: ${event.venue}\n` +
-              `🗺 Manzil: ${event.location}\n` +
-              `📹 Kamera soni: ${event.cameraCount || 1}\n` +
-              `💬 Komment: ${event.comment || "Yo'q"}\n` +
-              `🕒 Vaqti: ${formattedDate}, ${formattedTime}\n\n` +
-              `Iltimos, tayyorgarlik ko'ring!`;
-            sendUserbotMessage(op.telegramUsername, text, op.fullName).catch(e => console.log('Op reminder error:', e.message));
+            let opMsg = `⏰ DIQQAT ESLATMA!\n\nErtaga ${event.clientName || 'Mijoz'} ning tadbiri bor.\nVaqt: ${formattedDate}\nManzil: ${event.venue}\nKech qolmang!`;
+            sendUserbotMessage(op.telegramUsername, opMsg, op.fullName).catch(e => console.log('Op reminder error:', e.message));
           }
         }
       }
@@ -790,3 +759,87 @@ setInterval(async () => {
   }
 }, 60 * 60 * 1000); // Check every hour
 
+// Idea 1: Wedding Anniversary Cron Job (Runs every day at 10:00 AM)
+cron.schedule('0 10 * * *', async () => {
+  try {
+    const today = new Date();
+    const events = await Event.find({ status: 'Topshirildi' });
+    for (let event of events) {
+      if (event.clientPhone && event.date) {
+        const evDate = new Date(event.date);
+        // Check if month and day match, and year is less than current year
+        if (evDate.getDate() === today.getDate() && evDate.getMonth() === today.getMonth() && evDate.getFullYear() < today.getFullYear()) {
+          const years = today.getFullYear() - evDate.getFullYear();
+          const clientNameStr = (event.groomName || event.brideName) ? `${event.groomName || ''} & ${event.brideName || ''}` : (event.clientName || 'Mijoz');
+          const msg = `Assalomu alaykum, ${clientNameStr}!\n\nTimProduction jamoasi sizni oila qurganingizning ${years} yilligi bilan chin dildan muborakbod etadi! 🎉🥂\nOilangizga tinchlik, baxt va saodat tilaymiz.\n\nKelgusida farzandlaringizning (Beshik to'y, Sunnat to'y) quvonchli kunlarida ham xizmatingizda bo'lishdan mamnun bo'lamiz! 🎥✨`;
+          
+          sendUserbotMessage(event.clientPhone, msg, clientNameStr).catch(err => console.log('Yubiley xabari ketmadi:', err.message));
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Yubiley cron error:', err.message);
+  }
+});
+
+// Idea 20: AI Assistant Chat Endpoint
+app.post('/api/ai-chat', authMiddleware, async (req, res) => {
+  try {
+    const { message } = req.body;
+    const msgLower = message.toLowerCase();
+    
+    // Simple Keyword matching AI Logic
+    if (msgLower.includes('qancha') || msgLower.includes('tushum') || msgLower.includes('daromad') || msgLower.includes('foyda')) {
+      const events = await Event.find({ status: 'Topshirildi' });
+      let totalBudget = 0;
+      let totalExpense = 0;
+      events.forEach(e => {
+        totalBudget += e.budget || 0;
+        totalExpense += (e.operatorFee || 0) + (e.editorFee || 0) + (e.roninFee || 0) + (e.photoFee || 0);
+      });
+      const netProfit = totalBudget - totalExpense;
+      
+      const responseText = `🤖 AI Hisoboti: Jami tushum ${new Intl.NumberFormat('uz-UZ').format(totalBudget)} so'm. Xarajatlar ${new Intl.NumberFormat('uz-UZ').format(totalExpense)} so'm. Umumiy sof foyda: ${new Intl.NumberFormat('uz-UZ').format(netProfit)} so'm tashkil qiladi.`;
+      return res.json({ reply: responseText });
+    }
+    
+    if (msgLower.includes('to\\'y') || msgLower.includes('qancha to\\'y')) {
+      const allEvents = await Event.countDocuments();
+      const doneEvents = await Event.countDocuments({ status: 'Topshirildi' });
+      return res.json({ reply: `🤖 Hozirgacha tizimda jami ${allEvents} ta to'y ro'yxatga olingan. Shundan ${doneEvents} tasi muvaffaqiyatli topshirilgan.` });
+    }
+
+    res.json({ reply: "🤖 Men TimProduction AI yordamchisiman! Menga 'Qancha tushum bo'ldi?' yoki 'Jami to'ylar nechta?' kabi savollar bering." });
+  } catch (err) {
+    res.status(500).json({ reply: 'Kechirasiz, tizimda xatolik yuz berdi.' });
+  }
+});
+
+// Idea 4: NPS Rating Endpoint
+app.post('/api/events/:id/rate', async (req, res) => {
+  try {
+    const { rating, feedback } = req.body;
+    const event = await Event.findById(req.params.id);
+    if (!event) return res.status(404).json({ message: 'Topilmadi' });
+    
+    event.clientRating = Number(rating);
+    event.clientFeedback = feedback || '';
+    await event.save();
+    
+    if (event.clientRating < 8) {
+       // Alert admin via userbot. Assumes admin's phone or username is target. 
+       // We can send to saved env ADMIN_PHONE or hardcode or send to the first admin.
+       const admin = await User.findOne({ role: 'admin' });
+       if (admin && admin.telegramUsername) {
+          sendUserbotMessage(admin.telegramUsername, `⚠️ DIQQAT! Mijoz past baho berdi!\n\nMijoz: ${event.clientName || event.groomName}\nTo'y: ${event.title}\nBaho: ${rating}/10\nFikr: ${feedback || 'Yo\'q'}\nZudlik bilan mijoz bilan bog'laning!`, "Admin").catch(e=>e);
+       }
+    }
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Server portda ishladi: ${PORT}`);
+});

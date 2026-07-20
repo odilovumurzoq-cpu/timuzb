@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const eventSchema = new mongoose.Schema({
   title: { type: String, required: true },
-  eventType: { type: String, default: 'Nikoh oqshomi' },
+  eventType: { type: String, enum: ['To\'y', 'Fotiha', 'Fotosessiya', 'Love Story', 'Boshqa'], default: 'To\'y' },
   date: { type: Date, required: true },
   location: { type: String, required: true },
   venue: { type: String, required: true },
@@ -12,6 +12,9 @@ const eventSchema = new mongoose.Schema({
   assignedRoninchis: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   assignedPhotographers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   clientName: { type: String, default: '' },
+  groomName: { type: String, default: '' },
+  brideName: { type: String, default: '' },
+  telegramChatId: { type: String, default: '' },
   clientPhone: { type: String, default: '' },
   budget: { type: Number, default: 0 },
   advancePayment: { type: Number, default: 0 },
@@ -28,14 +31,6 @@ const eventSchema = new mongoose.Schema({
   comment: { type: String, default: '' },
   notified: { type: Boolean, default: false },
   reminderSent: { type: Boolean, default: false },
-  adminNote: { type: String, default: '' },
-  freelancerToken: { type: String, default: '' },
-  chatMessages: [{
-    senderName: String,
-    senderRole: String,
-    text: String,
-    timestamp: { type: Date, default: Date.now }
-  }],
   completedTasks: [{
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     role: String,

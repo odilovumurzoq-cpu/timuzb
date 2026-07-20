@@ -117,7 +117,7 @@ const getTelegramMessages = async (usernameOrPhone, limit = 50, contactName = "M
               new Api.InputPhoneContact({
                 clientId: BigInt(Math.floor(Math.random() * 10000000)),
                 phone: target,
-                firstName: "Mijoz",
+                firstName: contactName,
                 lastName: ""
               })
             ]
@@ -148,4 +148,71 @@ const getTelegramMessages = async (usernameOrPhone, limit = 50, contactName = "M
   }
 };
 
-module.exports = { initUserbot, sendUserbotMessage, getTelegramMessages };
+const createWeddingGroup = async (title, clientPhone, contactName, operatorUsernames) => {
+  try {
+    if (!client || !client.connected) {
+      await initUserbot();
+    }
+    
+    // Import client to contacts first
+    let clientTarget = clientPhone.match(/^\d+$/) ? '+' + clientPhone : clientPhone;
+    await client.invoke(
+      new Api.contacts.ImportContacts({
+        contacts: [
+          new Api.InputPhoneContact({
+            clientId: BigInt(Math.floor(Math.random() * 10000000)),
+            phone: clientTarget,
+            firstName: contactName,
+            lastName: ""
+          })
+        ]
+      })
+    );
+
+    // Prepare users list (operators + client)
+    let users = operatorUsernames.filter(u => u).map(u => {
+      let un = u.trim();
+      if (!un.startsWith('@')) un = '@' + un;
+      return un;
+    });
+    users.push(clientTarget);
+
+    const result = await client.invoke(new Api.messages.CreateChat({
+        users: users,
+        title: title
+    }));
+
+    if (result && result.chats && result.chats.length > 0) {
+      const chatId = result.chats[0].id;
+      console.log(`✅ Guruh yaratildi: ${title} (ID: ${chatId})`);
+      return chatId.toString();
+    }
+    return null;
+  } catch (err) {
+    console.error(`❌ Guruh yaratishda xatolik:`, err.message || err);
+    return null;
+  }
+};
+
+const kickUserFromGroup = async (chatId, username) => {
+  try {
+    if (!client || !client.connected) {
+      await initUserbot();
+    }
+    
+    let target = username.trim();
+    if (!target.startsWith('@')) target = '@' + target;
+
+    await client.invoke(new Api.messages.DeleteChatUser({
+        chatId: BigInt(chatId),
+        userId: target
+    }));
+    console.log(`✅ ${target} guruhdan chiqarildi (ChatID: ${chatId})`);
+    return true;
+  } catch (err) {
+    console.error(`❌ Guruhdan chiqarishda xatolik (${username}):`, err.message || err);
+    return false;
+  }
+};
+
+module.exports = { initUserbot, sendUserbotMessage, getTelegramMessages, createWeddingGroup, kickUserFromGroup };
