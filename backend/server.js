@@ -790,6 +790,3 @@ setInterval(async () => {
   }
 }, 60 * 60 * 1000); // Check every hour
 
-app.listen(PORT, () => {
-  console.log(`Server portda ishladi: ${PORT}`);
-});
