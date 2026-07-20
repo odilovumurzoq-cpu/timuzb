@@ -803,7 +803,7 @@ app.post('/api/ai-chat', authMiddleware, async (req, res) => {
       return res.json({ reply: responseText });
     }
     
-    if (msgLower.includes('to\\'y') || msgLower.includes('qancha to\\'y')) {
+    if (msgLower.includes("to'y") || msgLower.includes("qancha to'y")) {
       const allEvents = await Event.countDocuments();
       const doneEvents = await Event.countDocuments({ status: 'Topshirildi' });
       return res.json({ reply: `🤖 Hozirgacha tizimda jami ${allEvents} ta to'y ro'yxatga olingan. Shundan ${doneEvents} tasi muvaffaqiyatli topshirilgan.` });
