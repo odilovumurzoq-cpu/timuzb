@@ -353,14 +353,6 @@ function Dashboard({ user }) {
     }
   };
 
-        await axios.post(`/api/telegram/chat/${encodeURIComponent(chatPhone)}`, { message: newMessageText }, config);
-      setChatMessages([...chatMessages, { text: newMessageText, out: true, id: Date.now() }]);
-      setNewMessageText("");
-    } catch (error) {
-      console.error(error);
-      alert("Xabar yuborishda xatolik yuz berdi.");
-    }
-  };
 
   const handleShareTelegram = async (event) => {
     if (!window.confirm("Barcha biriktirilgan operatorlarga avtomatik xabar yuborilsinmi?")) return;
