@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Calendar as CalendarIcon, MapPin, Video, LayoutDashboard, Send, Link as LinkIcon, Save, Edit2 } from 'lucide-react';
+import { Calendar as CalendarIcon, MapPin, Video, LayoutDashboard, Send, Link as LinkIcon, Save, Edit2, Wallet, MessageCircle, X } from 'lucide-react';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
@@ -12,6 +12,9 @@ function OperatorDashboard({ user }) {
   const [events, setEvents] = useState([]);
   
   const [editingLink, setEditingLink] = useState({});
+  const [chatEventId, setChatEventId] = useState(null);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [newMessageText, setNewMessageText] = useState("");
 
   useEffect(() => {
     fetchData();
@@ -60,6 +63,24 @@ function OperatorDashboard({ user }) {
     }
   };
 
+  const openInternalChat = (event) => {
+    setChatEventId(event._id);
+    setChatMessages(event.chatMessages || []);
+  };
+
+  const handleSendInternalMessage = async () => {
+    if (!newMessageText.trim()) return;
+    try {
+      const config = { headers: { Authorization: `Bearer ${user.token}` } };
+      const res = await axios.post(`/api/events/${chatEventId}/chat`, { text: newMessageText }, config);
+      setChatMessages(res.data);
+      setNewMessageText("");
+      fetchData(); // update events list in background
+    } catch (err) {
+      alert("Xabar yuborishda xatolik");
+    }
+  };
+
   const calendarEvents = events.map(e => ({
     id: e._id,
     title: `${e.title} (${e.venue})`,
@@ -95,6 +116,9 @@ function OperatorDashboard({ user }) {
         </button>
         <button className={`tab-btn ${activeTab === 'calendar' ? 'active' : ''}`} onClick={() => setActiveTab('calendar')}>
           <CalendarIcon size={18} /> Kalendar
+        </button>
+        <button className={`tab-btn ${activeTab === 'salaries' ? 'active' : ''}`} onClick={() => setActiveTab('salaries')}>
+          <Wallet size={18} /> Mening Oyligim
         </button>
       </div>
 
@@ -138,8 +162,44 @@ function OperatorDashboard({ user }) {
                     </div>
                   </div>
                 </div>
-                
 
+                <div className="mt-4">
+                  <button className="btn btn-outline" style={{width: '100%', display: 'flex', justifyContent: 'center', gap: '0.5rem'}} onClick={() => openInternalChat(event)}>
+                    <MessageCircle size={18} /> Ichki Chat
+                  </button>
+                </div>
+                
+                <div className="mt-5 pt-4" style={{ borderTop: '1px solid var(--border)' }}>
+                  <label className="text-muted" style={{ fontSize: '0.75rem', marginBottom: '0.5rem', display: 'block' }}>HOLAT (STATUS):</label>
+                  <select 
+                    className="form-input" 
+                    value={event.status || 'Kutilmoqda'} 
+                    onChange={(e) => handleStatusChange(event._id, e.target.value)}
+                    style={{ padding: '0.5rem', fontSize: '0.875rem' }}
+                  >
+                    <option value="Kutilmoqda">Kutilmoqda</option>
+                    <option value="Syomka qilindi">Syomka qilindi</option>
+                    <option value="Montajda">Montajda</option>
+                    <option value="Tayyor">Tayyor</option>
+                  </select>
+                </div>
+
+                <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--border)' }}>
+                  <label className="text-muted" style={{ fontSize: '0.75rem', marginBottom: '0.5rem', display: 'block' }}>TAYYOR VIDEO HAVOLASI (YOUTUBE/DRIVE):</label>
+                  <div className="flex gap-2">
+                    <input 
+                      type="text" 
+                      className="form-input" 
+                      placeholder="https://..." 
+                      value={editingLink[event._id] !== undefined ? editingLink[event._id] : (event.videoLink || '')}
+                      onChange={(e) => setEditingLink({...editingLink, [event._id]: e.target.value})}
+                      style={{ padding: '0.5rem', fontSize: '0.875rem', flex: 1 }}
+                    />
+                    <button className="btn" onClick={() => handleLinkSave(event._id)} style={{ padding: '0.5rem' }}>
+                      <Save size={16} />
+                    </button>
+                  </div>
+                </div>
 
                 <div className="mt-4 pt-3 text-center">
                   {event.completedTasks && event.completedTasks.find(t => t.userId === user.id) ? (
@@ -165,7 +225,127 @@ function OperatorDashboard({ user }) {
             Sizga hali to'y biriktirilmagan. Dam oling!
           </div>
         )}
+
+        {activeTab === 'salaries' && (
+          <div className="card fade-in-up">
+            <h2 className="card-title"><Wallet size={20} /> Mening Oyligim</h2>
+            <p className="text-muted" style={{ marginBottom: '1.5rem' }}>Bu yerda siz qatnashgan va "Topshirildi" holatiga o'tgan loyihalar uchun yig'ilgan jami oylik ko'rsatiladi.</p>
+            <div className="table-responsive">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Loyiha / Mijoz</th>
+                    <th>Sana</th>
+                    <th>To'yxona</th>
+                    <th>Holat</th>
+                    <th>Yig'ilgan Oylik (UZS)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(() => {
+                    let totalSalary = 0;
+                    const completedEvents = events.filter(e => e.status === 'Topshirildi');
+                    
+                    if (completedEvents.length === 0) {
+                      return (
+                        <tr>
+                          <td colSpan="5" className="text-center text-muted">Hozircha oylik hisoblanmagan</td>
+                        </tr>
+                      );
+                    }
+
+                    return (
+                      <>
+                        {completedEvents.map(event => {
+                          let earned = 0;
+                          let roles = [];
+                          if (event.assignedOperators?.some(u => u._id === user.id || u === user.id)) {
+                            earned += (event.operatorFee || 0) / (event.assignedOperators?.length || 1);
+                            roles.push('Kameraman');
+                          }
+                          if (event.assignedEditors?.some(u => u._id === user.id || u === user.id)) {
+                            earned += (event.editorFee || 0) / (event.assignedEditors?.length || 1);
+                            roles.push('Montajyor');
+                          }
+                          if (event.assignedRoninchis?.some(u => u._id === user.id || u === user.id)) {
+                            earned += (event.roninFee || 0) / (event.assignedRoninchis?.length || 1);
+                            roles.push('Roninchi');
+                          }
+                          if (event.assignedPhotographers?.some(u => u._id === user.id || u === user.id)) {
+                            earned += (event.photoFee || 0) / (event.assignedPhotographers?.length || 1);
+                            roles.push('Fotograf');
+                          }
+                          totalSalary += earned;
+
+                          return (
+                            <tr key={event._id}>
+                              <td>
+                                <div style={{ fontWeight: 600 }}>{event.eventType}</div>
+                                <div className="text-muted" style={{ fontSize: '0.875rem' }}>{event.clientName} ({roles.join(', ')})</div>
+                              </td>
+                              <td>{new Date(event.date).toLocaleDateString('uz-UZ')}</td>
+                              <td>{event.venue}</td>
+                              <td><span className="status-badge" style={{ background: 'rgba(34,197,94,0.2)', color: '#4ade80' }}>Topshirildi</span></td>
+                              <td style={{ fontWeight: 600, color: '#4ade80' }}>{earned.toLocaleString()}</td>
+                            </tr>
+                          );
+                        })}
+                        <tr style={{ background: 'rgba(255,255,255,0.05)' }}>
+                          <td colSpan="4" style={{ textAlign: 'right', fontWeight: 700, fontSize: '1.1rem' }}>Jami Oylik:</td>
+                          <td style={{ fontWeight: 700, fontSize: '1.2rem', color: '#4ade80' }}>{totalSalary.toLocaleString()} UZS</td>
+                        </tr>
+                      </>
+                    );
+                  })()}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Chat Modal */}
+      {chatEventId && (
+        <div className="modal fade-in">
+          <div className="modal-content" style={{maxWidth: '400px', display: 'flex', flexDirection: 'column', height: '80vh', padding: 0}}>
+            <div className="modal-header" style={{padding: '1rem', borderBottom: '1px solid var(--border)'}}>
+              <h3>Ichki Chat</h3>
+              <button className="close-btn" onClick={() => setChatEventId(null)}><X size={20} /></button>
+            </div>
+            <div className="modal-body flex-1" style={{overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem'}}>
+              {chatMessages.length === 0 && <div className="text-center text-muted" style={{marginTop: 'auto', marginBottom: 'auto'}}>Hali xabar yo'q.</div>}
+              {chatMessages.map((msg, i) => {
+                const isMe = msg.senderName === user.fullName || msg.senderName === user.username;
+                return (
+                  <div key={i} style={{alignSelf: isMe ? 'flex-end' : 'flex-start', maxWidth: '80%'}}>
+                    <div style={{fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '0.2rem', textAlign: isMe ? 'right' : 'left'}}>{msg.senderName} ({msg.senderRole})</div>
+                    <div style={{
+                      padding: '0.6rem 0.8rem', 
+                      borderRadius: '12px', 
+                      background: isMe ? 'var(--primary)' : 'rgba(255,255,255,0.1)',
+                      color: 'white'
+                    }}>
+                      {msg.text}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{padding: '1rem', borderTop: '1px solid var(--border)', display: 'flex', gap: '0.5rem'}}>
+              <input 
+                type="text" 
+                className="form-input" 
+                placeholder="Xabar yozing..." 
+                value={newMessageText}
+                onChange={e => setNewMessageText(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleSendInternalMessage()}
+                style={{flex: 1}}
+              />
+              <button className="btn btn-primary" onClick={handleSendInternalMessage}><Send size={18} /></button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

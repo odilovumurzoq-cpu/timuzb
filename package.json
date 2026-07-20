@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "CRM system for TimProduction",
   "scripts": {
-    "postinstall": "cd backend && npm install && cd ../frontend && npm install && npm run build",
+    "postinstall": "cd frontend && npm install && npm run build && cd ../backend && npm install",
     "start": "node backend/server.js"
   },
   "engines": {

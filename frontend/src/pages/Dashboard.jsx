@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Bot, Plus, Trash2, Edit, Calendar as CalendarIcon, Users, MapPin, Video, LayoutDashboard, Save, X, BarChart2, BarChart3, Clock, DollarSign, LogOut, CheckCircle, Search, MessageCircle, Send, Link as LinkIcon, Star, Copy, Archive, ListTodo, ExternalLink, Download, Wallet, Sun, Moon, Smartphone } from 'lucide-react';
-import AIChatWindow from '../components/AIChatWindow';
-import TelegramChatModal from '../components/TelegramChatModal';
+import { Plus, Trash2, Edit, Calendar as CalendarIcon, Users, MapPin, Video, LayoutDashboard, Save, X, BarChart2, BarChart3, Clock, DollarSign, LogOut, CheckCircle, Search, MessageCircle, Send, Link as LinkIcon, Star, Copy, Archive, ListTodo, ExternalLink, Download, Wallet, Sun, Moon, Smartphone, FileText, Edit2 } from 'lucide-react';
 import { Calendar, momentLocalizer } from 'react-big-calendar';
 import moment from 'moment';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
@@ -12,10 +10,6 @@ import * as XLSX from 'xlsx';
 const localizer = momentLocalizer(moment);
 
 function Dashboard({ user }) {
-  
-    
-      const [chatPhone, setChatPhone] = useState(null);
-  const [aiChatOpen, setAiChatOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('analytics'); // calendar, events, operators, analytics, finance, kanban, expenses
   const [events, setEvents] = useState([]);
   const [operators, setOperators] = useState([]);
@@ -35,24 +29,27 @@ function Dashboard({ user }) {
     document.body.className = theme === 'light' ? 'light-mode' : '';
   }, [theme]);
 
-  const [newOp, setNewOp] = useState({ username: '', password: '', fullName: '', telegramUsername: '', professions: ["operator"] });
+  const [newOp, setNewOp] = useState({ username: '', password: '', fullName: '', telegramUsername: '', profession: ['operator'] });
   const [editOpId, setEditOpId] = useState(null);
 
   const [newEvent, setNewEvent] = useState({ 
-    title: '', eventType: "To'y", date: '', location: '', venue: '', cameraCount: 1, assignedOperators: [], assignedEditors: [], assignedRoninchis: [], assignedPhotographers: [],
-    clientName: '', clientPhone: '', budget: 0, advancePayment: 0, status: 'Kutilmoqda', comment: '', album: '', caseType: '' 
+    title: '', eventType: "Nikoh oqshomi", customEventType: "", date: '', location: '', venue: '', cameraCount: 1, assignedOperators: [], assignedEditors: [], assignedRoninchis: [], assignedPhotographers: [],
+    clientName: '', clientPhone: '', budget: 0, advancePayment: 0, operatorFee: 0, editorFee: 0, roninFee: 0, photoFee: 0, status: 'Kutilmoqda', comment: '', album: '', caseType: '', adminNote: ''
   });
   const [editEventId, setEditEventId] = useState(null);
 
   const [newExpense, setNewExpense] = useState({ description: '', amount: 0, date: '' });
 
-        
+  const [chatPhone, setChatPhone] = useState(null);
+  const [chatEventId, setChatEventId] = useState(null);
+  const [chatMessages, setChatMessages] = useState([]);
+  const [newMessageText, setNewMessageText] = useState("");
+  const [isChatLoading, setIsChatLoading] = useState(false);
+
   const [smsModalOpen, setSmsModalOpen] = useState(false);
   const [smsPhone, setSmsPhone] = useState(null);
   const [smsText, setSmsText] = useState("");
 
-        
-  
   useEffect(() => {
     fetchData();
   }, []);
@@ -84,7 +81,7 @@ function Dashboard({ user }) {
       } else {
         await axios.post('/api/operators', newOp, config);
       }
-      setNewOp({ username: '', password: '', fullName: '', telegramUsername: '', professions: ["operator"] });
+      setNewOp({ username: '', password: '', fullName: '', telegramUsername: '', profession: 'operator' });
       setEditOpId(null);
       fetchData();
     } catch (error) {
@@ -94,14 +91,14 @@ function Dashboard({ user }) {
 
   const handleEditOperator = (op) => {
     setEditOpId(op._id);
-    setNewOp({ username: op.username, password: '', fullName: op.fullName, telegramUsername: op.telegramUsername || '', professions: op.professions || ["operator"] });
+    setNewOp({ username: op.username, password: '', fullName: op.fullName, telegramUsername: op.telegramUsername || '', profession: op.profession || 'operator' });
     setActiveTab('operators');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const cancelEditOperator = () => {
     setEditOpId(null);
-    setNewOp({ username: '', password: '', fullName: '', telegramUsername: '', professions: ["operator"] });
+    setNewOp({ username: '', password: '', fullName: '', telegramUsername: '', profession: 'operator' });
   };
 
   const handleDeleteOperator = async (id) => {
@@ -121,6 +118,9 @@ function Dashboard({ user }) {
       const config = { headers: { Authorization: `Bearer ${user.token}` } };
       
       const payload = { ...newEvent };
+      if (payload.eventType === 'Boshqa' && payload.customEventType) {
+        payload.eventType = payload.customEventType;
+      }
       if (payload.date && !payload.date.includes('+') && !payload.date.includes('Z')) {
         payload.date = new Date(payload.date).toISOString();
       }
@@ -130,7 +130,7 @@ function Dashboard({ user }) {
       } else {
         await axios.post('/api/events', payload, config);
       }
-      setNewEvent({ title: '', eventType: "To'y", date: '', location: '', venue: '', cameraCount: 1, assignedOperators: [], assignedEditors: [], assignedRoninchis: [], assignedPhotographers: [], clientName: '', clientPhone: '', budget: 0, advancePayment: 0, status: 'Kutilmoqda', comment: '', album: '', caseType: '' });
+        setNewEvent({ title: '', eventType: "Nikoh oqshomi", customEventType: "", date: '', location: '', venue: '', cameraCount: 1, assignedOperators: [], assignedEditors: [], assignedRoninchis: [], assignedPhotographers: [], clientName: '', clientPhone: '', budget: 0, advancePayment: 0, operatorFee: 0, editorFee: 0, roninFee: 0, photoFee: 0, status: 'Kutilmoqda', comment: '', adminNote: '' });
       setEditEventId(null);
       fetchData();
     } catch (error) {
@@ -146,7 +146,8 @@ function Dashboard({ user }) {
     
     setNewEvent({
       title: event.title,
-      eventType: event.eventType || "To'y",
+      eventType: ["Nikoh oqshomi", "Kelin salom / Joyg'undoron", "Fotiha", "Fotosessiya", "Love Story"].includes(event.eventType) ? event.eventType : 'Boshqa',
+      customEventType: ["Nikoh oqshomi", "Kelin salom / Joyg'undoron", "Fotiha", "Fotosessiya", "Love Story"].includes(event.eventType) ? "" : event.eventType,
       date: localISOTime,
       location: event.location,
       venue: event.venue,
@@ -159,8 +160,13 @@ function Dashboard({ user }) {
       clientPhone: event.clientPhone || '',
       budget: event.budget || 0,
       advancePayment: event.advancePayment || 0,
+      operatorFee: event.operatorFee || 0,
+      editorFee: event.editorFee || 0,
+      roninFee: event.roninFee || 0,
+      photoFee: event.photoFee || 0,
       status: event.status || 'Kutilmoqda',
       comment: event.comment || '',
+      adminNote: event.adminNote || '',
       album: event.album || '',
       caseType: event.caseType || ''
     });
@@ -170,7 +176,7 @@ function Dashboard({ user }) {
 
   const cancelEditEvent = () => {
     setEditEventId(null);
-    setNewEvent({ title: '', eventType: "To'y", date: '', location: '', venue: '', cameraCount: 1, assignedOperators: [], assignedEditors: [], assignedRoninchis: [], assignedPhotographers: [], clientName: '', clientPhone: '', budget: 0, advancePayment: 0, status: 'Kutilmoqda', comment: '', album: '', caseType: '' });
+    setNewEvent({ title: '', eventType: "To'y", date: '', location: '', venue: '', cameraCount: 1, assignedOperators: [], assignedEditors: [], assignedRoninchis: [], assignedPhotographers: [], clientName: '', clientPhone: '', budget: 0, advancePayment: 0, operatorFee: 0, editorFee: 0, roninFee: 0, photoFee: 0, status: 'Kutilmoqda', comment: '', album: '', caseType: '' });
   };
 
   const handleDeleteEvent = async (id) => {
@@ -353,6 +359,19 @@ function Dashboard({ user }) {
     }
   };
 
+  const sendChatMessage = async (e) => {
+    e.preventDefault();
+    if (!newMessageText.trim() || !chatPhone) return;
+    try {
+      const config = { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } };
+      await axios.post(`/api/telegram/chat/${encodeURIComponent(chatPhone)}`, { message: newMessageText }, config);
+      setChatMessages([...chatMessages, { text: newMessageText, out: true, id: Date.now() }]);
+      setNewMessageText("");
+    } catch (error) {
+      console.error(error);
+      alert("Xabar yuborishda xatolik yuz berdi.");
+    }
+  };
 
   const handleShareTelegram = async (event) => {
     if (!window.confirm("Barcha biriktirilgan operatorlarga avtomatik xabar yuborilsinmi?")) return;
@@ -384,6 +403,63 @@ function Dashboard({ user }) {
   }));
 
   const kanbanColumns = ['Kutilmoqda', 'Syomka qilindi', 'Montajda', 'Tayyor', 'Topshirildi'];
+
+  const generateFreelancerLink = async (eventId) => {
+    try {
+      const config = { headers: { Authorization: `Bearer ${user.token}` } };
+      const res = await axios.post(`/api/events/${eventId}/freelancer`, {}, config);
+      const link = `${window.location.origin}/freelancer/${res.data.token}`;
+      navigator.clipboard.writeText(link);
+      alert("Freelancer havola nusxalandi: " + link);
+    } catch (err) {
+      alert("Xatolik yuz berdi");
+    }
+  };
+
+  const printContract = (event) => {
+    const w = window.open('', '_blank');
+    w.document.write(`
+      <html><head><title>Shartnoma</title></head>
+      <body style="font-family: Arial, sans-serif; padding: 2rem;">
+        <h1 style="text-align: center;">TimProduction Xizmat Ko'rsatish Shartnomasi</h1>
+        <p><strong>Mijoz:</strong> \${event.clientName || ''}</p>
+        <p><strong>Telefon:</strong> \${event.clientPhone || ''}</p>
+        <p><strong>Loyiha:</strong> \${event.eventType} - \${event.title}</p>
+        <p><strong>Sana:</strong> \${new Date(event.date).toLocaleDateString()}</p>
+        <p><strong>To'yxona/Manzil:</strong> \${event.venue} (\${event.location})</p>
+        <hr/>
+        <p><strong>Umumiy summa:</strong> \${event.budget} UZS</p>
+        <p><strong>Oldindan to'lov (Avans):</strong> \${event.advancePayment} UZS</p>
+        <p><strong>Qoldiq summa:</strong> \${event.budget - event.advancePayment} UZS</p>
+        <br/><br/>
+        <div style="display: flex; justify-content: space-between; margin-top: 50px;">
+          <div><p>Mijoz imzosi: ____________________</p></div>
+          <div><p>TimProduction imzosi: ____________________</p></div>
+        </div>
+      </body></html>
+    `);
+    w.document.close();
+    w.focus();
+    setTimeout(() => { w.print(); }, 500);
+  };
+
+  const openInternalChat = (event) => {
+    setChatEventId(event._id);
+    setChatMessages(event.chatMessages || []);
+  };
+
+  const handleSendInternalMessage = async () => {
+    if (!newMessageText.trim()) return;
+    try {
+      const config = { headers: { Authorization: `Bearer ${user.token}` } };
+      const res = await axios.post(`/api/events/${chatEventId}/chat`, { text: newMessageText }, config);
+      setChatMessages(res.data);
+      setNewMessageText("");
+      fetchData(); // update events list in background
+    } catch (err) {
+      alert("Xabar yuborishda xatolik");
+    }
+  };
 
   return (
     <div>
@@ -481,6 +557,47 @@ function Dashboard({ user }) {
                       <Bar dataKey="expense" name="Xarajat (UZS)" fill="var(--danger)" radius={[4, 4, 0, 0]} />
                       <Bar dataKey="profit" name="Sof Foyda (UZS)" fill="#f59e0b" radius={[4, 4, 0, 0]} />
                     </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div className="card">
+                <h2 className="card-title mb-4"><Sun size={20} color="#f59e0b" style={{display:'inline'}}/> Mavsumiy Tahlil (Qish, Bahor, Yoz, Kuz)</h2>
+                <div style={{ width: '100%', height: 300 }}>
+                  <ResponsiveContainer>
+                    {(() => {
+                      const seasonalData = [
+                        { name: 'Qish', budget: 0, profit: 0 },
+                        { name: 'Bahor', budget: 0, profit: 0 },
+                        { name: 'Yoz', budget: 0, profit: 0 },
+                        { name: 'Kuz', budget: 0, profit: 0 }
+                      ];
+                      
+                      events.forEach(e => {
+                        const month = new Date(e.date).getMonth() + 1; // 1-12
+                        let seasonIndex = 0;
+                        if (month === 12 || month === 1 || month === 2) seasonIndex = 0; // Qish
+                        else if (month >= 3 && month <= 5) seasonIndex = 1; // Bahor
+                        else if (month >= 6 && month <= 8) seasonIndex = 2; // Yoz
+                        else if (month >= 9 && month <= 11) seasonIndex = 3; // Kuz
+
+                        seasonalData[seasonIndex].budget += (e.budget || 0);
+                        const opsFee = (e.operatorFee || 0) + (e.editorFee || 0) + (e.roninFee || 0) + (e.photoFee || 0);
+                        seasonalData[seasonIndex].profit += (e.budget || 0) - opsFee;
+                      });
+
+                      return (
+                        <BarChart data={seasonalData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                          <XAxis dataKey="name" stroke="var(--text-muted)" />
+                          <YAxis stroke="var(--text-muted)" />
+                          <Tooltip contentStyle={{ backgroundColor: 'var(--bg-dark)', border: '1px solid var(--border)', borderRadius: '8px' }} />
+                          <Legend />
+                          <Bar dataKey="budget" name="Jami Tushum (UZS)" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
+                          <Bar dataKey="profit" name="Sof Foyda (UZS)" fill="#ec4899" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      );
+                    })()}
                   </ResponsiveContainer>
                 </div>
               </div>
@@ -605,7 +722,12 @@ function Dashboard({ user }) {
                         {formatUZS(event.budget - event.advancePayment)}
                       </td>
                       <td>
-                        <button className="btn btn-outline" onClick={() => handleEditEvent(event)} style={{ padding: '0.4rem', border: 'none' }}><Edit size={16} /></button>
+                        <div className="flex gap-1">
+                          <button className="btn btn-outline" title="Tahrirlash" onClick={() => handleEditEvent(event)} style={{ padding: '0.4rem', border: 'none' }}><Edit size={16} /></button>
+                          <button className="btn btn-outline" title="Ichki Chat" onClick={() => openInternalChat(event)} style={{ padding: '0.4rem', border: 'none', color: '#60a5fa' }}><MessageCircle size={16} /></button>
+                          <button className="btn btn-outline" title="Freelancer Havola" onClick={() => generateFreelancerLink(event._id)} style={{ padding: '0.4rem', border: 'none', color: '#f472b6' }}><LinkIcon size={16} /></button>
+                          <button className="btn btn-outline" title="Shartnoma Yuklash" onClick={() => printContract(event)} style={{ padding: '0.4rem', border: 'none', color: '#fbbf24' }}><FileText size={16} /></button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -671,31 +793,36 @@ function Dashboard({ user }) {
               <form onSubmit={handleAddEvent}>
                 <div className="form-group">
                   <label className="form-label">Sarlavha (M-n: Alisher & Malika)</label>
-                  <input type="text" className="form-input" value={newEvent.title} onChange={e => setNewEvent({...newEvent, title: e.target.value})} placeholder="Agar bo'sh qoldirsangiz ismlardan olinadi" />
-                </div>
-                <div className="grid grid-cols-2" style={{ gap: '1rem' }}>
-                  
+                  <input type="text" className="form-input" value={newEvent.title} onChange={e => setNewEvent({...newEvent, title: e.target.value})} required />
                 </div>
                 <div className="grid grid-cols-2" style={{ gap: '1rem' }}>
                   <div className="form-group">
-                    <label className="form-label">Boshqa mijoz (Tashkilot, tug'ilgan kun)</label>
-                    <input type="text" className="form-input" value={newEvent.clientName} onChange={e => setNewEvent({...newEvent, clientName: e.target.value})} placeholder="Faqat to'y bo'lmasa to'ldiring" />
+                    <label className="form-label">Mijoz Ismi</label>
+                    <input type="text" className="form-input" value={newEvent.clientName} onChange={e => setNewEvent({...newEvent, clientName: e.target.value})} />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Mijoz Telefoni</label>
-                    <input type="text" className="form-input" value={newEvent.clientPhone} onChange={e => setNewEvent({...newEvent, clientPhone: e.target.value})} placeholder="+998901234567" required />
+                    <input type="text" className="form-input" value={newEvent.clientPhone} onChange={e => setNewEvent({...newEvent, clientPhone: e.target.value})} placeholder="+998901234567" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2" style={{ gap: '1rem' }}>
                   <div className="form-group">
                     <label className="form-label">Loyiha turi</label>
-                    <select className="form-input" value={newEvent.eventType} onChange={e => setNewEvent({...newEvent, eventType: e.target.value})}>
-                      <option value="To'y">To'y</option>
-                      <option value="Fotiha">Fotiha</option>
-                      <option value="Fotosessiya">Fotosessiya</option>
-                      <option value="Love Story">Love Story</option>
-                      <option value="Boshqa">Boshqa</option>
-                    </select>
+                    {newEvent.eventType === 'Boshqa' ? (
+                      <div className="flex" style={{gap: '0.5rem'}}>
+                        <input type="text" className="form-input" placeholder="Yozing..." value={newEvent.customEventType} onChange={e => setNewEvent({...newEvent, customEventType: e.target.value})} />
+                        <button type="button" onClick={() => setNewEvent({...newEvent, eventType: 'Nikoh oqshomi'})} className="btn-secondary" style={{padding: '0 10px'}}>X</button>
+                      </div>
+                    ) : (
+                      <select className="form-input" value={newEvent.eventType} onChange={e => setNewEvent({...newEvent, eventType: e.target.value})}>
+                        <option value="Nikoh oqshomi">Nikoh oqshomi</option>
+                        <option value="Kelin salom / Joyg'undoron">Kelin salom / Joyg'undoron</option>
+                        <option value="Fotiha">Fotiha</option>
+                        <option value="Fotosessiya">Fotosessiya</option>
+                        <option value="Love Story">Love Story</option>
+                        <option value="Boshqa">Boshqa...</option>
+                      </select>
+                    )}
                   </div>
                   <div className="form-group">
                     <label className="form-label">Sana va Vaqt</label>
@@ -768,6 +895,10 @@ function Dashboard({ user }) {
                   </select>
                 </div>
                 <div className="form-group">
+                  <label className="form-label" style={{color: '#f59e0b'}}><Edit2 size={14} style={{display:'inline', marginRight: '4px'}}/> Maxfiy Eslatma (Faqat Admin uchun)</label>
+                  <textarea className="form-input" rows="2" placeholder="Faqat siz ko'rasiz..." value={newEvent.adminNote} onChange={e => setNewEvent({...newEvent, adminNote: e.target.value})}></textarea>
+                </div>
+                <div className="form-group">
                   <label className="form-label">Holat (Status)</label>
                   <select className="form-input" value={newEvent.status} onChange={e => setNewEvent({...newEvent, status: e.target.value})}>
                     <option value="Kutilmoqda">Kutilmoqda</option>
@@ -780,7 +911,7 @@ function Dashboard({ user }) {
                 <div className="form-group">
                   <label className="form-label">Kameramanlarni tanlash</label>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    {operators.filter(o => o.professions?.includes('operator')).map(op => (
+                    {operators.filter(o => o.profession !== 'editor').map(op => (
                       <label key={op._id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'white', userSelect: 'none' }}>
                         <input 
                           type="checkbox" 
@@ -796,7 +927,7 @@ function Dashboard({ user }) {
                 <div className="form-group">
                   <label className="form-label">Montajyorlarni tanlash</label>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    {operators.filter(o => o.professions?.includes('editor')).map(op => (
+                    {operators.filter(o => o.profession === 'editor').map(op => (
                       <label key={op._id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'white', userSelect: 'none' }}>
                         <input 
                           type="checkbox" 
@@ -812,7 +943,7 @@ function Dashboard({ user }) {
                 <div className="form-group">
                   <label className="form-label">Roninchilarni tanlash</label>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    {operators.filter(o => o.professions?.includes('roninchi')).map(op => (
+                    {operators.filter(o => o.profession === 'roninchi').map(op => (
                       <label key={op._id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'white', userSelect: 'none' }}>
                         <input 
                           type="checkbox" 
@@ -828,7 +959,7 @@ function Dashboard({ user }) {
                 <div className="form-group">
                   <label className="form-label">Fotograflarni tanlash</label>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    {operators.filter(o => o.professions?.includes('fotograf')).map(op => (
+                    {operators.filter(o => o.profession === 'fotograf').map(op => (
                       <label key={op._id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'white', userSelect: 'none' }}>
                         <input 
                           type="checkbox" 
@@ -855,9 +986,9 @@ function Dashboard({ user }) {
             </div>
 
             <div className="card">
-              <h2 className="card-title">Kutilayotgan To'ylar (Hali boshlanmagan)</h2>
+              <h2 className="card-title">Bo'lajak To'ylar (Jarayondagi)</h2>
               <div className="flex-col gap-4">
-                {filteredEvents.filter(e => e.status === 'Kutilmoqda').map(event => (
+                {filteredEvents.filter(e => e.status !== 'Topshirildi').map(event => (
                   <div key={event._id} style={{ padding: '1rem', background: 'var(--bg-dark)', borderRadius: '12px', border: '1px solid var(--border)' }}>
                     <div className="flex justify-between items-center mb-4">
                       <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'white' }}>{event.title}</h3>
@@ -867,8 +998,6 @@ function Dashboard({ user }) {
                           navigator.clipboard.writeText(link);
                           alert("Mijoz uchun kuzatish ssilkasi nusxalandi! Endi mijozga yuboring.\n" + link);
                         }} style={{ padding: '0.4rem 0.8rem', fontSize: '0.875rem' }} title="Mijoz Ssilkasi"><LinkIcon size={14} style={{marginRight: '4px'}} /> Nusxa</button>
-                        
-                        <a href={`/contract/${event._id}`} target="_blank" rel="noreferrer" className="btn btn-outline" style={{ padding: '0.4rem 0.8rem', fontSize: '0.875rem', textDecoration: 'none', color: '#f59e0b', borderColor: '#f59e0b' }} title="Shartnoma (PDF) Yaratish">📄 Shartnoma</a>
                         {event.clientPhone && <button className="btn btn-info" onClick={() => openChat(event)} style={{ padding: '0.4rem 0.8rem', fontSize: '0.875rem', background: '#0088cc', color: 'white' }} title="Telegram Chat"><MessageCircle size={14} style={{marginRight: '4px'}} /> Chat</button>}
                         {event.clientPhone && <button className="btn btn-info" onClick={() => openSmsModal(event)} style={{ padding: '0.4rem 0.8rem', fontSize: '0.875rem', background: '#4CAF50', color: 'white' }} title="SMS Yuborish"><Smartphone size={14} style={{marginRight: '4px'}} /> SMS</button>}
                         <button className="btn btn-primary" onClick={() => handleShareTelegram(event)} style={{ padding: '0.4rem 0.8rem', fontSize: '0.875rem' }} title="Operatorga yuborish"><Send size={14} style={{marginRight: '4px'}} /> Yuborish</button>
@@ -898,36 +1027,7 @@ function Dashboard({ user }) {
                     </div>
                   </div>
                 ))}
-                {filteredEvents.filter(e => e.status === 'Kutilmoqda').length === 0 && <div className="text-muted text-center" style={{padding: '2rem 0'}}>Hozircha kutilayotgan to'ylar yo'q</div>}
-              </div>
-            </div>
-
-            <div className="card" style={{ marginTop: '1.5rem', border: '1px solid var(--primary)' }}>
-              <h2 className="card-title text-primary">Jarayondagi To'ylar (Syomka / Montaj)</h2>
-              <div className="flex-col gap-4">
-                {filteredEvents.filter(e => e.status !== 'Kutilmoqda' && e.status !== 'Topshirildi').map(event => (
-                  <div key={event._id} style={{ padding: '1rem', background: 'var(--bg-dark)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 style={{ fontSize: '1.125rem', fontWeight: 600, color: 'white' }}>{event.title}</h3>
-                      <div className="flex gap-2">
-                        <button className="btn btn-outline" onClick={() => {
-                          const link = `${window.location.origin}/track/${event._id}`;
-                          navigator.clipboard.writeText(link);
-                          alert("Mijoz uchun kuzatish ssilkasi nusxalandi! Endi mijozga yuboring.\n" + link);
-                        }} style={{ padding: '0.4rem 0.8rem', fontSize: '0.875rem' }} title="Mijoz Ssilkasi"><LinkIcon size={14} style={{marginRight: '4px'}} /> Nusxa</button>
-                        
-                        <a href={`/contract/${event._id}`} target="_blank" rel="noreferrer" className="btn btn-outline" style={{ padding: '0.4rem 0.8rem', fontSize: '0.875rem', textDecoration: 'none', color: '#f59e0b', borderColor: '#f59e0b' }} title="Shartnoma (PDF) Yaratish">📄 Shartnoma</a>
-                        {event.clientPhone && <button className="btn btn-info" onClick={() => openChat(event)} style={{ padding: '0.4rem 0.8rem', fontSize: '0.875rem', background: '#0088cc', color: 'white' }} title="Telegram Chat"><MessageCircle size={14} style={{marginRight: '4px'}} /> Chat</button>}
-                        {event.clientPhone && <button className="btn btn-info" onClick={() => openSmsModal(event)} style={{ padding: '0.4rem 0.8rem', fontSize: '0.875rem', background: '#4CAF50', color: 'white' }} title="SMS Yuborish"><Smartphone size={14} style={{marginRight: '4px'}} /> SMS</button>}
-                        <button className="btn btn-outline" onClick={() => handleEditEvent(event)} style={{ padding: '0.4rem', border: 'none', background: 'rgba(255,255,255,0.05)' }}><Edit size={16} /></button>
-                      </div>
-                    </div>
-                    <div className="text-muted" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>Holat: <span className="badge" style={{background: 'rgba(59, 130, 246, 0.2)', color: '#93c5fd'}}>{event.status}</span></div>
-                    {event.album && <div className="text-muted" style={{ fontSize: '0.875rem', color: '#ffb300' }}>📸 Albom: {event.album}</div>}
-                    {event.caseType && <div className="text-muted" style={{ fontSize: '0.875rem', color: '#00e5ff' }}>💼 Keys: {event.caseType}</div>}
-                  </div>
-                ))}
-                {filteredEvents.filter(e => e.status !== 'Kutilmoqda' && e.status !== 'Topshirildi').length === 0 && <div className="text-muted text-center" style={{padding: '2rem 0'}}>Hozircha jarayondagi to'ylar yo'q</div>}
+                {filteredEvents.filter(e => e.status !== 'Topshirildi').length === 0 && <div className="text-muted text-center" style={{padding: '2rem 0'}}>Hozircha jarayondagi to'ylar yo'q</div>}
               </div>
             </div>
           </div>
@@ -1000,28 +1100,27 @@ function Dashboard({ user }) {
                 </div>
                 <div className="form-group">
                   <label className="form-label">Kasbi (Yo'nalishi)</label>
-                  
-                  <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                  <div className="flex" style={{gap: '1rem', flexWrap: 'wrap', marginTop: '0.5rem'}}>
                     {['operator', 'editor', 'roninchi', 'fotograf'].map(prof => (
-                      <label key={prof} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,255,255,0.05)', padding: '0.5rem 1rem', borderRadius: '8px', cursor: 'pointer' }}>
+                      <label key={prof} style={{display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', textTransform: 'capitalize'}}>
                         <input 
                           type="checkbox" 
-                          checked={newOp.professions?.includes(prof)}
-                          onChange={e => {
-                            let updatedProfs = newOp.professions || [];
-                            if (e.target.checked) {
-                              updatedProfs = [...updatedProfs, prof];
-                            } else {
-                              updatedProfs = updatedProfs.filter(p => p !== prof);
-                            }
-                            setNewOp({...newOp, professions: updatedProfs});
+                          checked={(newOp.profession || []).includes(prof)}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            setNewOp(prev => {
+                              const prevProfs = prev.profession || [];
+                              const newProfs = checked 
+                                ? [...prevProfs, prof] 
+                                : prevProfs.filter(p => p !== prof);
+                              return { ...prev, profession: newProfs };
+                            });
                           }}
                         />
-                        {prof.charAt(0).toUpperCase() + prof.slice(1)}
+                        {prof}
                       </label>
                     ))}
                   </div>
-
                 </div>
                 <div className="flex gap-2">
                   <button type="submit" className="btn w-full" style={{justifyContent: 'center'}}>
@@ -1042,7 +1141,7 @@ function Dashboard({ user }) {
                 {operators.map(op => (
                   <div key={op._id} className="flex justify-between items-center" style={{ padding: '1rem', background: 'var(--bg-dark)', borderRadius: '12px', border: '1px solid var(--border)' }}>
                     <div>
-                      <div style={{ fontWeight: 600, color: 'white', marginBottom: '0.25rem' }}>{op.fullName} <span style={{fontSize: '0.75rem', padding: '2px 6px', background: op.professions?.join(', ') === 'editor' ? '#007bff' : op.professions?.join(', ') === 'roninchi' ? '#ffc107' : op.professions?.join(', ') === 'fotograf' ? '#dc3545' : '#28a745', color: op.professions?.join(', ') === 'roninchi' ? '#000' : '#fff', borderRadius: '10px', marginLeft: '6px'}}>{(op.professions?.join(', ') || 'operator').toUpperCase()}</span></div>
+                      <div style={{ fontWeight: 600, color: 'white', marginBottom: '0.25rem' }}>{op.fullName} <span style={{fontSize: '0.75rem', padding: '2px 6px', background: (Array.isArray(op.profession) ? op.profession[0] : op.profession) === 'editor' ? '#007bff' : (Array.isArray(op.profession) ? op.profession[0] : op.profession) === 'roninchi' ? '#ffc107' : (Array.isArray(op.profession) ? op.profession[0] : op.profession) === 'fotograf' ? '#dc3545' : '#28a745', color: (Array.isArray(op.profession) ? op.profession[0] : op.profession) === 'roninchi' ? '#000' : '#fff', borderRadius: '10px', marginLeft: '6px'}}>{(Array.isArray(op.profession) ? op.profession.join(', ') : (op.profession || 'operator')).toUpperCase()}</span></div>
                       <div className="text-muted" style={{ fontSize: '0.875rem' }}>@{op.username} {op.telegramUsername && `| Telegram: ${op.telegramUsername}`}</div>
                     </div>
                     <div className="flex gap-2">
@@ -1074,7 +1173,7 @@ function Dashboard({ user }) {
                 <tbody>
                   {operators.map(op => {
                     let completedCount = 0;
-                    let totalSalary = 0; /* removed */
+                    let totalSalary = 0;
                     
                     events.forEach(event => {
                       if (event.status === 'Topshirildi') {
@@ -1102,7 +1201,7 @@ function Dashboard({ user }) {
                     return (
                       <tr key={op._id}>
                         <td style={{ fontWeight: 600 }}>{op.fullName}</td>
-                        <td><span className="badge" style={{ backgroundColor: 'var(--primary)' }}>{op.professions?.join(', ')}</span></td>
+                        <td><span className="badge" style={{ backgroundColor: 'var(--primary)' }}>{op.profession}</span></td>
                         <td style={{ color: 'var(--success)' }}>{completedCount} ta loyiha</td>
                         <td style={{ fontWeight: 700, color: '#f59e0b' }}>{formatUZS(totalSalary)}</td>
                       </tr>
@@ -1178,6 +1277,49 @@ function Dashboard({ user }) {
         </div>
       )}
 
+      {/* Chat Modal */}
+      {chatEventId && (
+        <div className="modal fade-in">
+          <div className="modal-content" style={{maxWidth: '400px', display: 'flex', flexDirection: 'column', height: '80vh', padding: 0}}>
+            <div className="modal-header" style={{padding: '1rem', borderBottom: '1px solid var(--border)'}}>
+              <h3>Ichki Chat</h3>
+              <button className="close-btn" onClick={() => setChatEventId(null)}><X size={20} /></button>
+            </div>
+            <div className="modal-body flex-1" style={{overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem'}}>
+              {chatMessages.length === 0 && <div className="text-center text-muted" style={{marginTop: 'auto', marginBottom: 'auto'}}>Hali xabar yo'q.</div>}
+              {chatMessages.map((msg, i) => {
+                const isMe = msg.senderName === user.fullName || msg.senderName === user.username;
+                return (
+                  <div key={i} style={{alignSelf: isMe ? 'flex-end' : 'flex-start', maxWidth: '80%'}}>
+                    <div style={{fontSize: '0.7rem', color: 'var(--text-muted)', marginBottom: '0.2rem', textAlign: isMe ? 'right' : 'left'}}>{msg.senderName} ({msg.senderRole})</div>
+                    <div style={{
+                      padding: '0.6rem 0.8rem', 
+                      borderRadius: '12px', 
+                      background: isMe ? 'var(--primary)' : 'rgba(255,255,255,0.1)',
+                      color: 'white'
+                    }}>
+                      {msg.text}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{padding: '1rem', borderTop: '1px solid var(--border)', display: 'flex', gap: '0.5rem'}}>
+              <input 
+                type="text" 
+                className="form-input" 
+                placeholder="Xabar yozing..." 
+                value={newMessageText}
+                onChange={e => setNewMessageText(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleSendInternalMessage()}
+                style={{flex: 1}}
+              />
+              <button className="btn btn-primary" onClick={handleSendInternalMessage}><Send size={18} /></button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* SMS YUBORISH MODAL */}
       {smsModalOpen && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -1207,18 +1349,6 @@ function Dashboard({ user }) {
           </div>
         </div>
       )}
-
-            {/* Modals & Floating Buttons */}
-      <button 
-        onClick={() => setAiChatOpen(!aiChatOpen)}
-        style={{ position: 'fixed', bottom: '20px', right: '20px', width: '60px', height: '60px', borderRadius: '30px', background: 'linear-gradient(135deg, #1e3a8a, #3b82f6)', color: 'white', border: 'none', boxShadow: '0 4px 20px rgba(59, 130, 246, 0.4)', cursor: 'pointer', zIndex: 999, display: 'flex', justifyContent: 'center', alignItems: 'center' }}
-        title="AI Yordamchi"
-      >
-        <Bot size={30} />
-      </button>
-
-      <AIChatWindow isOpen={aiChatOpen} onClose={() => setAiChatOpen(false)} />
-      <TelegramChatModal chatPhone={chatPhone} onClose={() => setChatPhone(null)} />
 
     </div>
   );

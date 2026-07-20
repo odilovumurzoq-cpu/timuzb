@@ -4,7 +4,7 @@ const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
   role: { type: String, enum: ['admin', 'operator'], default: 'operator' },
-  professions: [{ type: String, enum: ['operator', 'editor', 'roninchi', 'fotograf'] }],
+  profession: { type: [String], default: ['operator'] },
   fullName: { type: String, required: true },
   telegramId: { type: String, default: null },
   telegramChatId: { type: String, default: null },

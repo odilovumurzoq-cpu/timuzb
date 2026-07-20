@@ -4,7 +4,7 @@ import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import OperatorDashboard from './pages/OperatorDashboard';
 import ClientPortal from './pages/ClientPortal';
-import Contract from './pages/Contract';
+import FreelancerView from './pages/FreelancerView';
 import Navbar from './components/Navbar';
 
 function App() {
@@ -45,7 +45,7 @@ function App() {
             element={!user ? <Login onLogin={handleLogin} /> : <Navigate to="/" />} 
           />
           <Route path="/track/:id" element={<ClientPortal />} />
-          <Route path="/contract/:id" element={<Contract />} />
+          <Route path="/freelancer/:token" element={<FreelancerView />} />
           
           <Route 
             path="/" 
