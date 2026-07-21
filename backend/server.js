@@ -549,14 +549,14 @@ app.put('/api/events/:id/status', authMiddleware, async (req, res) => {
 
     if (oldStatus !== 'Tayyor' && event.status === 'Tayyor') {
       if (event.clientPhone) {
-        const contactName = `${event.clientName || 'Mijoz'} ${new Date(event.date).toLocaleDateString('uz-UZ', { timeZone: 'Asia/Tashkent', day: '2-digit', month: '2-digit', year: 'numeric' })}`;
+        const contactName = `${event.title || event.clientName || 'Mijoz'} ${new Date(event.date).toLocaleDateString('uz-UZ', { timeZone: 'Asia/Tashkent', day: '2-digit', month: '2-digit', year: 'numeric' })}`;
         let msg = `Assalomu alaykum, ${event.clientName || 'Mijoz'}! 👋\n\nSizning videongiz tayyor bo'ldi! 🎉\nIltimos, Tim Production ofisidan kelib olib keting.`;
         sendUserbotMessage(event.clientPhone, msg, contactName).catch(err => console.log('Telegram xabar ketmadi:', err.message));
       }
     }
     if (oldStatus !== 'Topshirildi' && event.status === 'Topshirildi') {
       if (event.clientPhone) {
-        const contactName = `${event.clientName || 'Mijoz'} ${new Date(event.date).toLocaleDateString('uz-UZ', { timeZone: 'Asia/Tashkent', day: '2-digit', month: '2-digit', year: 'numeric' })}`;
+        const contactName = `${event.title || event.clientName || 'Mijoz'} ${new Date(event.date).toLocaleDateString('uz-UZ', { timeZone: 'Asia/Tashkent', day: '2-digit', month: '2-digit', year: 'numeric' })}`;
         let msg = `Assalomu alaykum, ${event.clientName || 'Mijoz'}! 👋\n\nBizni tanlaganingiz uchun tashakkur! 🎥✨`;
         if (event.videoLink) {
            msg += `\n\nVideo uchun havola: ${event.videoLink}`;
@@ -679,7 +679,8 @@ app.get('/api/telegram/chat/:phone', authMiddleware, adminMiddleware, async (req
     const event = await Event.findOne({ clientPhone: { $regex: phone.replace('+', '') } }).sort({ date: -1 });
     if (event) {
       const formattedDate = new Date(event.date).toLocaleDateString('uz-UZ', { timeZone: 'Asia/Tashkent', day: '2-digit', month: '2-digit', year: 'numeric' });
-      contactName = `${event.clientName || 'Mijoz'} ${formattedDate}`;
+      // Sarlavhadan (kelin/kuyov ismi) olamiz, yo'q bo'lsa clientName
+      contactName = `${event.title || event.clientName || 'Mijoz'} ${formattedDate}`;
     }
     const messages = await getTelegramMessages(phone, 30, contactName); // Oxirgi 30 ta xabar
     res.json(messages);
@@ -693,7 +694,15 @@ app.post('/api/telegram/chat/:phone', authMiddleware, adminMiddleware, async (re
   try {
     const { phone } = req.params;
     const { message } = req.body;
-    await sendUserbotMessage(phone, message);
+    let contactName = "Mijoz";
+    let formattedPhone = phone;
+    if (!formattedPhone.startsWith('+')) formattedPhone = '+' + formattedPhone.replace(/\D/g, '');
+    const event = await Event.findOne({ clientPhone: { $regex: phone.replace('+', '') } }).sort({ date: -1 });
+    if (event) {
+      const formattedDate = new Date(event.date).toLocaleDateString('uz-UZ', { timeZone: 'Asia/Tashkent', day: '2-digit', month: '2-digit', year: 'numeric' });
+      contactName = `${event.title || event.clientName || 'Mijoz'} ${formattedDate}`;
+    }
+    await sendUserbotMessage(phone, message, contactName);
     res.json({ success: true });
   } catch (error) {
     console.error("Xabar yuborish xatosi:", error);
@@ -728,8 +737,9 @@ setInterval(async () => {
       
       // Notify client
       if (event.clientPhone) {
-        let msg = `Assalomu alaykum, ${event.clientName || 'Mijoz'}!\nTimProduction sizga ertangi tadbiringizni eslatib o'tadi.\n\nTadbir: ${event.eventType}\nVaqt: ${formattedDate}\n\nXizmat ko'rsatuvchilarimiz o'z vaqtida yetib borishadi!`;
-        const contactName = `${event.clientName || 'Mijoz'} ${formattedDate.split(',')[0]}`;
+        const clientDisplayName = event.title || event.clientName || 'Mijoz';
+        let msg = `Assalomu alaykum, ${clientDisplayName}!\nTimProduction sizga ertangi tadbiringizni eslatib o'tadi.\n\nTadbir: ${event.eventType}\nVaqt: ${formattedDate}\n\nXizmat ko'rsatuvchilarimiz o'z vaqtida yetib borishadi!`;
+        const contactName = `${clientDisplayName} ${formattedDate.split(',')[0]}`;
         sendUserbotMessage(event.clientPhone, msg, contactName).catch(e => console.log('Client reminder error:', e.message));
       }
 

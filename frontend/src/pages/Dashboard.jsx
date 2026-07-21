@@ -301,7 +301,7 @@ function Dashboard({ user }) {
       text = `Assalomu Alaykum 🌟\n\nSizning Videongiz tayyor bo'ldi! 🎉\n\nIltimos, Tim ofisidan kelib olib keting. 📍\n\nLoyihangiz: ${eventObj.eventType || "To'y"}\nSana: ${new Date(eventObj.date).toLocaleDateString('uz-UZ', { timeZone: 'Asia/Tashkent' })}\n\nTimProduction xizmatidan foydalanganingiz uchun rahmat! 😊`;
     } else {
       const formattedDate = new Date(eventObj.date).toLocaleDateString('uz-UZ', { timeZone: 'Asia/Tashkent', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-      text = `Assalomu alaykum, ${eventObj.clientName || 'Mijoz'}!\nTimProduction sizning buyurtmangizni qabul qildi.\n\nTadbir: ${eventObj.eventType}\nSana: ${formattedDate}\nKamera soni: ${eventObj.cameraCount || 1} ta\n`;
+      text = `Assalomu alaykum, ${eventObj.clientName || 'Mijoz'}!\nTimProduction sizning buyurtmangizni qabul qildi.\n\nSarlavha: ${eventObj.title || "Mavjud emas"}\nTadbir: ${eventObj.eventType}\nSana: ${formattedDate}\nKamera soni: ${eventObj.cameraCount || 1} ta\n`;
       if (eventObj.assignedRoninchis && eventObj.assignedRoninchis.length > 0) text += `Roninchi: Bor\n`;
       if (eventObj.assignedPhotographers && eventObj.assignedPhotographers.length > 0) text += `Fotograf: Bor\n`;
       if (eventObj.album) text += `Albom: ${eventObj.album}\n`;
@@ -331,7 +331,7 @@ function Dashboard({ user }) {
   const openSmsModal = (event) => {
     const formattedDate = new Date(event.date).toLocaleDateString('uz-UZ', { timeZone: 'Asia/Tashkent', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     
-    let text = `Assalomu alaykum, ${event.clientName || 'Mijoz'}!\nTimProduction sizning buyurtmangizni qabul qildi.\n\nTadbir: ${event.eventType}\nSana: ${formattedDate}\nKamera soni: ${event.cameraCount || 1} ta\n`;
+    let text = `Assalomu alaykum, ${event.clientName || 'Mijoz'}!\nTimProduction sizning buyurtmangizni qabul qildi.\n\nSarlavha: ${event.title || "Mavjud emas"}\nTadbir: ${event.eventType}\nSana: ${formattedDate}\nKamera soni: ${event.cameraCount || 1} ta\n`;
     if (event.assignedRoninchis && event.assignedRoninchis.length > 0) text += `Roninchi: Bor\n`;
     if (event.assignedPhotographers && event.assignedPhotographers.length > 0) text += `Fotograf: Bor\n`;
     if (event.album) text += `Albom: ${event.album}\n`;
