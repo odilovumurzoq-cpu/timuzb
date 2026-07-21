@@ -53,14 +53,14 @@ const notifyOperators = async (event, isUpdate = false) => {
     
     for (const op of operators) {
       if (op.telegramUsername) {
-        let msg = `🔔 DIQQAT! Sizga eslatma bor!\n` +
+        let msg = `🔔 DIQQAT!\n` +
           `${event.eventType || "Nikoh oqshomi"}\n` +
-          `${event.clientName || "Mijoz"}\n` +
+          `${event.title || event.clientName || "Mijoz"}\n` +
+          `🕒 Vaqti: ${formattedDate}, ${formattedTime}\n` +
           `📍 To'yxona: ${event.venue}\n` +
           `🗺 Manzil: ${event.location}\n` +
           `📹 Kamera soni: ${event.cameraCount || 1}\n` +
-          `💬 Komment: ${event.comment || "Yo'q"}\n` +
-          `🕒 Vaqti: ${formattedDate}, ${formattedTime}\n\n` +
+          `💬 Komment: ${event.comment || "Yo'q"}\n\n` +
           `Iltimos, tayyorgarlik ko'ring!`;
         sendUserbotMessage(op.telegramUsername, msg, op.fullName);
       }
@@ -149,14 +149,14 @@ cron.schedule('0 * * * *', async () => {
     for (const event of upcomingEvents) {
       const formattedDate = new Date(event.date).toLocaleDateString('en-GB', { timeZone: 'Asia/Tashkent' });
       const formattedTime = new Date(event.date).toLocaleTimeString('en-GB', { timeZone: 'Asia/Tashkent', hour: '2-digit', minute: '2-digit' });
-      const text = `🔔 DIQQAT! Sizga eslatma bor!\n` +
+      const text = `🔔 DIQQAT!\n` +
         `${event.eventType || "Nikoh oqshomi"}\n` +
-        `${event.clientName || "Mijoz"}\n` +
+        `${event.title || event.clientName || "Mijoz"}\n` +
+        `🕒 Vaqti: ${formattedDate}, ${formattedTime}\n` +
         `📍 To'yxona: ${event.venue}\n` +
         `🗺 Manzil: ${event.location}\n` +
         `📹 Kamera soni: ${event.cameraCount || 1}\n` +
-        `💬 Komment: ${event.comment || "Yo'q"}\n` +
-        `🕒 Vaqti: ${formattedDate}, ${formattedTime}\n\n` +
+        `💬 Komment: ${event.comment || "Yo'q"}\n\n` +
         `Iltimos, tayyorgarlik ko'ring!`;
 
       const allStaff = [
@@ -429,14 +429,14 @@ app.post('/api/events/:id/send', authMiddleware, async (req, res) => {
 
     const formattedDate = new Date(event.date).toLocaleDateString('en-GB', { timeZone: 'Asia/Tashkent' });
     const formattedTime = new Date(event.date).toLocaleTimeString('en-GB', { timeZone: 'Asia/Tashkent', hour: '2-digit', minute: '2-digit' });
-    const text = `🔔 DIQQAT! Sizga eslatma bor!\n` +
+    const text = `🔔 DIQQAT!\n` +
       `${event.eventType || "Nikoh oqshomi"}\n` +
-      `${event.clientName || "Mijoz"}\n` +
+      `${event.title || event.clientName || "Mijoz"}\n` +
+      `🕒 Vaqti: ${formattedDate}, ${formattedTime}\n` +
       `📍 To'yxona: ${event.venue}\n` +
       `🗺 Manzil: ${event.location}\n` +
       `📹 Kamera soni: ${event.cameraCount || 1}\n` +
-      `💬 Komment: ${event.comment || "Yo'q"}\n` +
-      `🕒 Vaqti: ${formattedDate}, ${formattedTime}\n\n` +
+      `💬 Komment: ${event.comment || "Yo'q"}\n\n` +
       `Iltimos, tayyorgarlik ko'ring!`;
 
     let sent = 0;
@@ -557,10 +557,7 @@ app.put('/api/events/:id/status', authMiddleware, async (req, res) => {
     if (oldStatus !== 'Topshirildi' && event.status === 'Topshirildi') {
       if (event.clientPhone) {
         const contactName = `${event.title || event.clientName || 'Mijoz'} ${new Date(event.date).toLocaleDateString('uz-UZ', { timeZone: 'Asia/Tashkent', day: '2-digit', month: '2-digit', year: 'numeric' })}`;
-        let msg = `Assalomu alaykum, ${event.clientName || 'Mijoz'}! 👋\n\nBizni tanlaganingiz uchun tashakkur! 🎥✨`;
-        if (event.videoLink) {
-           msg += `\n\nVideo uchun havola: ${event.videoLink}`;
-        }
+        let msg = `Assalomu alaykum, ${event.clientName || 'Mijoz'}! 👋\n\nSizning buyurtmangiz muvaffaqiyatli topshirildi! ✅\nBizni tanlaganingiz uchun tashakkur! 🎥✨\n\nSizning fikringiz biz uchun muhim! Iltimos, xizmat sifatini quyidagi havola orqali baholang:\n⭐ https://timuzbukhara.onrender.com/track/${event._id}`;
         sendUserbotMessage(event.clientPhone, msg, contactName).catch(err => console.log('Telegram xabar ketmadi:', err.message));
       }
     }
@@ -756,14 +753,14 @@ setInterval(async () => {
           if (op.telegramUsername) {
             const formattedDate = new Date(event.date).toLocaleDateString('en-GB', { timeZone: 'Asia/Tashkent' });
             const formattedTime = new Date(event.date).toLocaleTimeString('en-GB', { timeZone: 'Asia/Tashkent', hour: '2-digit', minute: '2-digit' });
-            const text = `🔔 DIQQAT! Sizga eslatma bor!\n` +
+            const text = `🔔 DIQQAT!\n` +
               `${event.eventType || "Nikoh oqshomi"}\n` +
-              `${event.clientName || "Mijoz"}\n` +
+              `${event.title || event.clientName || "Mijoz"}\n` +
+              `🕒 Vaqti: ${formattedDate}, ${formattedTime}\n` +
               `📍 To'yxona: ${event.venue}\n` +
               `🗺 Manzil: ${event.location}\n` +
               `📹 Kamera soni: ${event.cameraCount || 1}\n` +
-              `💬 Komment: ${event.comment || "Yo'q"}\n` +
-              `🕒 Vaqti: ${formattedDate}, ${formattedTime}\n\n` +
+              `💬 Komment: ${event.comment || "Yo'q"}\n\n` +
               `Iltimos, tayyorgarlik ko'ring!`;
             sendUserbotMessage(op.telegramUsername, text, op.fullName).catch(e => console.log('Op reminder error:', e.message));
           }

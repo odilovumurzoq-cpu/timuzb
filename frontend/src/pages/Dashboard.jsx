@@ -146,8 +146,8 @@ function Dashboard({ user }) {
     
     setNewEvent({
       title: event.title,
-      eventType: ["Nikoh oqshomi", "Kelin salom / Joyg'undoron", "Fotiha", "Fotosessiya", "Love Story"].includes(event.eventType) ? event.eventType : 'Boshqa',
-      customEventType: ["Nikoh oqshomi", "Kelin salom / Joyg'undoron", "Fotiha", "Fotosessiya", "Love Story"].includes(event.eventType) ? "" : event.eventType,
+      eventType: ["Nikoh oqshomi", "Kelin biyori", "Joyg'undoron", "Nahorgi Osh", "Fotiha", "Fotosessiya", "Love Story"].includes(event.eventType) ? event.eventType : 'Boshqa',
+      customEventType: ["Nikoh oqshomi", "Kelin biyori", "Joyg'undoron", "Nahorgi Osh", "Fotiha", "Fotosessiya", "Love Story"].includes(event.eventType) ? "" : event.eventType,
       date: localISOTime,
       location: event.location,
       venue: event.venue,
@@ -816,7 +816,9 @@ function Dashboard({ user }) {
                     ) : (
                       <select className="form-input" value={newEvent.eventType} onChange={e => setNewEvent({...newEvent, eventType: e.target.value})}>
                         <option value="Nikoh oqshomi">Nikoh oqshomi</option>
-                        <option value="Kelin salom / Joyg'undoron">Kelin salom / Joyg'undoron</option>
+                        <option value="Kelin biyori">Kelin biyori</option>
+                        <option value="Joyg'undoron">Joyg'undoron</option>
+                        <option value="Nahorgi Osh">Nahorgi Osh</option>
                         <option value="Fotiha">Fotiha</option>
                         <option value="Fotosessiya">Fotosessiya</option>
                         <option value="Love Story">Love Story</option>
