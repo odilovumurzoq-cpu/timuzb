@@ -909,67 +909,83 @@ function Dashboard({ user }) {
                   </select>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Kameramanlarni tanlash</label>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    {operators.filter(o => o.profession !== 'editor').map(op => (
+                  <label className="form-label" style={{color:'#28a745', display:'flex', alignItems:'center', gap:'6px'}}>🎥 Kameramanlarni tanlash</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', background: 'rgba(40,167,69,0.06)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(40,167,69,0.25)' }}>
+                    {operators.filter(o => {
+                      const prof = Array.isArray(o.profession) ? o.profession : [o.profession || 'operator'];
+                      return prof.includes('operator');
+                    }).map(op => (
                       <label key={op._id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'white', userSelect: 'none' }}>
                         <input 
                           type="checkbox" 
                           checked={newEvent.assignedOperators.includes(op._id)} 
                           onChange={() => handleOperatorCheckbox(op._id)} 
-                          style={{ width: '1.2rem', height: '1.2rem', accentColor: 'var(--primary)', cursor: 'pointer' }}
+                          style={{ width: '1.2rem', height: '1.2rem', accentColor: '#28a745', cursor: 'pointer' }}
                         />
                         {op.fullName}
                       </label>
                     ))}
+                    {operators.filter(o => (Array.isArray(o.profession) ? o.profession : [o.profession || 'operator']).includes('operator')).length === 0 && <span className="text-muted" style={{fontSize:'0.8rem'}}>Kameraman xodimlar yo'q</span>}
                   </div>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Montajyorlarni tanlash</label>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    {operators.filter(o => o.profession === 'editor').map(op => (
+                  <label className="form-label" style={{color:'#007bff', display:'flex', alignItems:'center', gap:'6px'}}>🎬 Montajyorlarni tanlash</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', background: 'rgba(0,123,255,0.06)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(0,123,255,0.25)' }}>
+                    {operators.filter(o => {
+                      const prof = Array.isArray(o.profession) ? o.profession : [o.profession || 'operator'];
+                      return prof.includes('editor');
+                    }).map(op => (
                       <label key={op._id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'white', userSelect: 'none' }}>
                         <input 
                           type="checkbox" 
                           checked={newEvent.assignedEditors.includes(op._id)} 
                           onChange={() => handleEditorCheckbox(op._id)} 
-                          style={{ width: '1.2rem', height: '1.2rem', accentColor: 'var(--success)', cursor: 'pointer' }}
+                          style={{ width: '1.2rem', height: '1.2rem', accentColor: '#007bff', cursor: 'pointer' }}
                         />
                         {op.fullName}
                       </label>
                     ))}
+                    {operators.filter(o => (Array.isArray(o.profession) ? o.profession : [o.profession || 'operator']).includes('editor')).length === 0 && <span className="text-muted" style={{fontSize:'0.8rem'}}>Montajyor xodimlar yo'q</span>}
                   </div>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Roninchilarni tanlash</label>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    {operators.filter(o => o.profession === 'roninchi').map(op => (
+                  <label className="form-label" style={{color:'#ffc107', display:'flex', alignItems:'center', gap:'6px'}}>🎭 Roninchilarni tanlash</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', background: 'rgba(255,193,7,0.06)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,193,7,0.25)' }}>
+                    {operators.filter(o => {
+                      const prof = Array.isArray(o.profession) ? o.profession : [o.profession || 'operator'];
+                      return prof.includes('roninchi');
+                    }).map(op => (
                       <label key={op._id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'white', userSelect: 'none' }}>
                         <input 
                           type="checkbox" 
                           checked={newEvent.assignedRoninchis.includes(op._id)} 
                           onChange={() => handleRoninchiCheckbox(op._id)} 
-                          style={{ width: '1.2rem', height: '1.2rem', accentColor: 'var(--warning)', cursor: 'pointer' }}
+                          style={{ width: '1.2rem', height: '1.2rem', accentColor: '#ffc107', cursor: 'pointer' }}
                         />
                         {op.fullName}
                       </label>
                     ))}
+                    {operators.filter(o => (Array.isArray(o.profession) ? o.profession : [o.profession || 'operator']).includes('roninchi')).length === 0 && <span className="text-muted" style={{fontSize:'0.8rem'}}>Roninchi xodimlar yo'q</span>}
                   </div>
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Fotograflarni tanlash</label>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    {operators.filter(o => o.profession === 'fotograf').map(op => (
+                  <label className="form-label" style={{color:'#dc3545', display:'flex', alignItems:'center', gap:'6px'}}>📸 Fotograflarni tanlash</label>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', background: 'rgba(220,53,69,0.06)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(220,53,69,0.25)' }}>
+                    {operators.filter(o => {
+                      const prof = Array.isArray(o.profession) ? o.profession : [o.profession || 'operator'];
+                      return prof.includes('fotograf');
+                    }).map(op => (
                       <label key={op._id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'white', userSelect: 'none' }}>
                         <input 
                           type="checkbox" 
                           checked={newEvent.assignedPhotographers.includes(op._id)} 
                           onChange={() => handleFotografCheckbox(op._id)} 
-                          style={{ width: '1.2rem', height: '1.2rem', accentColor: 'var(--info)', cursor: 'pointer' }}
+                          style={{ width: '1.2rem', height: '1.2rem', accentColor: '#dc3545', cursor: 'pointer' }}
                         />
                         {op.fullName}
                       </label>
                     ))}
+                    {operators.filter(o => (Array.isArray(o.profession) ? o.profession : [o.profession || 'operator']).includes('fotograf')).length === 0 && <span className="text-muted" style={{fontSize:'0.8rem'}}>Fotograf xodimlar yo'q</span>}
                   </div>
                 </div>
                 <div className="flex gap-2">

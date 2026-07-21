@@ -368,9 +368,7 @@ app.post('/api/events', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const event = new Event(req.body);
     await event.save();
-
-    notifyOperators(event); // operatorlarga xabar yuborish
-
+    // ❌ Avtomatik xabar yuborilmaydi - admin o'zi "Xabar Yuborish" tugmasi bilan yuboradi
     res.json(event);
   } catch (error) {
     res.status(400).json({ message: 'Xatolik' });
@@ -526,28 +524,8 @@ app.post('/api/events/:id/chat', authMiddleware, async (req, res) => {
 
 app.put('/api/events/:id', authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const oldEvent = await Event.findById(req.params.id);
     const event = await Event.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    
-    if (oldEvent) {
-      if (oldEvent.status !== 'Tayyor' && event.status === 'Tayyor') {
-        if (event.clientPhone) {
-          const contactName = `${event.clientName || 'Mijoz'} ${new Date(event.date).toLocaleDateString('uz-UZ', { timeZone: 'Asia/Tashkent', day: '2-digit', month: '2-digit', year: 'numeric' })}`;
-          let msg = `Assalomu alaykum, ${event.clientName || 'Mijoz'}! 👋\n\nSizning videongiz tayyor bo'ldi! 🎉\nIltimos, Tim Production ofisidan kelib olib keting.`;
-          sendUserbotMessage(event.clientPhone, msg, contactName).catch(err => console.log('Telegram xabar ketmadi:', err.message));
-        }
-      }
-      if (oldEvent.status !== 'Topshirildi' && event.status === 'Topshirildi') {
-        if (event.clientPhone) {
-          const contactName = `${event.clientName || 'Mijoz'} ${new Date(event.date).toLocaleDateString('uz-UZ', { timeZone: 'Asia/Tashkent', day: '2-digit', month: '2-digit', year: 'numeric' })}`;
-          let msg = `Assalomu alaykum, ${event.clientName || 'Mijoz'}! 👋\n\nBizni tanlaganingiz uchun tashakkur! 🎥✨`;
-          if (event.videoLink) {
-             msg += `\n\nVideo uchun havola: ${event.videoLink}`;
-          }
-          sendUserbotMessage(event.clientPhone, msg, contactName).catch(err => console.log('Telegram xabar ketmadi:', err.message));
-        }
-      }
-    }
+    // ❌ Avtomatik xabar yuborilmaydi - admin o'zi "Xabar Yuborish" tugmasi bilan yuboradi
     res.json(event);
   } catch (error) {
     res.status(400).json({ message: 'Xatolik' });
