@@ -1137,20 +1137,112 @@ function Dashboard({ user }) {
 
             <div className="card">
               <h2 className="card-title">Xodimlar Ro'yxati</h2>
-              <div className="flex-col gap-3">
-                {operators.map(op => (
-                  <div key={op._id} className="flex justify-between items-center" style={{ padding: '1rem', background: 'var(--bg-dark)', borderRadius: '12px', border: '1px solid var(--border)' }}>
-                    <div>
-                      <div style={{ fontWeight: 600, color: 'white', marginBottom: '0.25rem' }}>{op.fullName} <span style={{fontSize: '0.75rem', padding: '2px 6px', background: (Array.isArray(op.profession) ? op.profession[0] : op.profession) === 'editor' ? '#007bff' : (Array.isArray(op.profession) ? op.profession[0] : op.profession) === 'roninchi' ? '#ffc107' : (Array.isArray(op.profession) ? op.profession[0] : op.profession) === 'fotograf' ? '#dc3545' : '#28a745', color: (Array.isArray(op.profession) ? op.profession[0] : op.profession) === 'roninchi' ? '#000' : '#fff', borderRadius: '10px', marginLeft: '6px'}}>{(Array.isArray(op.profession) ? op.profession.join(', ') : (op.profession || 'operator')).toUpperCase()}</span></div>
-                      <div className="text-muted" style={{ fontSize: '0.875rem' }}>@{op.username} {op.telegramUsername && `| Telegram: ${op.telegramUsername}`}</div>
-                    </div>
-                    <div className="flex gap-2">
-                      <button className="btn btn-outline" onClick={() => handleEditOperator(op)} style={{ padding: '0.4rem', border: 'none', background: 'rgba(255,255,255,0.05)' }}><Edit size={16} /></button>
-                      <button className="btn btn-danger" onClick={() => handleDeleteOperator(op._id)} style={{ padding: '0.4rem' }}><Trash2 size={16} /></button>
-                    </div>
+
+              {/* KAMERAMANLAR */}
+              {operators.filter(op => {
+                const prof = Array.isArray(op.profession) ? op.profession : [op.profession || 'operator'];
+                return prof.includes('operator');
+              }).length > 0 && (
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <div style={{ fontWeight: 700, color: '#28a745', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    🎥 Kameramanlar ({operators.filter(op => (Array.isArray(op.profession) ? op.profession : [op.profession || 'operator']).includes('operator')).length})
                   </div>
-                ))}
-              </div>
+                  <div className="flex-col gap-2">
+                    {operators.filter(op => (Array.isArray(op.profession) ? op.profession : [op.profession || 'operator']).includes('operator')).map(op => (
+                      <div key={op._id} className="flex justify-between items-center" style={{ padding: '0.75rem 1rem', background: 'var(--bg-dark)', borderRadius: '10px', border: '1px solid rgba(40, 167, 69, 0.3)' }}>
+                        <div>
+                          <div style={{ fontWeight: 600, color: 'white' }}>{op.fullName}</div>
+                          <div className="text-muted" style={{ fontSize: '0.8rem' }}>@{op.username} {op.telegramUsername && `| ${op.telegramUsername}`}</div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button className="btn btn-outline" onClick={() => handleEditOperator(op)} style={{ padding: '0.4rem', border: 'none', background: 'rgba(255,255,255,0.05)' }}><Edit size={16} /></button>
+                          <button className="btn btn-danger" onClick={() => handleDeleteOperator(op._id)} style={{ padding: '0.4rem' }}><Trash2 size={16} /></button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* MONTAJYORLAR */}
+              {operators.filter(op => {
+                const prof = Array.isArray(op.profession) ? op.profession : [op.profession || 'operator'];
+                return prof.includes('editor');
+              }).length > 0 && (
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <div style={{ fontWeight: 700, color: '#007bff', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    🎬 Montajyorlar ({operators.filter(op => (Array.isArray(op.profession) ? op.profession : [op.profession || 'operator']).includes('editor')).length})
+                  </div>
+                  <div className="flex-col gap-2">
+                    {operators.filter(op => (Array.isArray(op.profession) ? op.profession : [op.profession || 'operator']).includes('editor')).map(op => (
+                      <div key={op._id} className="flex justify-between items-center" style={{ padding: '0.75rem 1rem', background: 'var(--bg-dark)', borderRadius: '10px', border: '1px solid rgba(0, 123, 255, 0.3)' }}>
+                        <div>
+                          <div style={{ fontWeight: 600, color: 'white' }}>{op.fullName}</div>
+                          <div className="text-muted" style={{ fontSize: '0.8rem' }}>@{op.username} {op.telegramUsername && `| ${op.telegramUsername}`}</div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button className="btn btn-outline" onClick={() => handleEditOperator(op)} style={{ padding: '0.4rem', border: 'none', background: 'rgba(255,255,255,0.05)' }}><Edit size={16} /></button>
+                          <button className="btn btn-danger" onClick={() => handleDeleteOperator(op._id)} style={{ padding: '0.4rem' }}><Trash2 size={16} /></button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* RONINCHILAR */}
+              {operators.filter(op => {
+                const prof = Array.isArray(op.profession) ? op.profession : [op.profession || 'operator'];
+                return prof.includes('roninchi');
+              }).length > 0 && (
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <div style={{ fontWeight: 700, color: '#ffc107', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    🎭 Roninchilar ({operators.filter(op => (Array.isArray(op.profession) ? op.profession : [op.profession || 'operator']).includes('roninchi')).length})
+                  </div>
+                  <div className="flex-col gap-2">
+                    {operators.filter(op => (Array.isArray(op.profession) ? op.profession : [op.profession || 'operator']).includes('roninchi')).map(op => (
+                      <div key={op._id} className="flex justify-between items-center" style={{ padding: '0.75rem 1rem', background: 'var(--bg-dark)', borderRadius: '10px', border: '1px solid rgba(255, 193, 7, 0.3)' }}>
+                        <div>
+                          <div style={{ fontWeight: 600, color: 'white' }}>{op.fullName}</div>
+                          <div className="text-muted" style={{ fontSize: '0.8rem' }}>@{op.username} {op.telegramUsername && `| ${op.telegramUsername}`}</div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button className="btn btn-outline" onClick={() => handleEditOperator(op)} style={{ padding: '0.4rem', border: 'none', background: 'rgba(255,255,255,0.05)' }}><Edit size={16} /></button>
+                          <button className="btn btn-danger" onClick={() => handleDeleteOperator(op._id)} style={{ padding: '0.4rem' }}><Trash2 size={16} /></button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* FOTOGRAFLAR */}
+              {operators.filter(op => {
+                const prof = Array.isArray(op.profession) ? op.profession : [op.profession || 'operator'];
+                return prof.includes('fotograf');
+              }).length > 0 && (
+                <div style={{ marginBottom: '1rem' }}>
+                  <div style={{ fontWeight: 700, color: '#dc3545', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    📸 Fotograflar ({operators.filter(op => (Array.isArray(op.profession) ? op.profession : [op.profession || 'operator']).includes('fotograf')).length})
+                  </div>
+                  <div className="flex-col gap-2">
+                    {operators.filter(op => (Array.isArray(op.profession) ? op.profession : [op.profession || 'operator']).includes('fotograf')).map(op => (
+                      <div key={op._id} className="flex justify-between items-center" style={{ padding: '0.75rem 1rem', background: 'var(--bg-dark)', borderRadius: '10px', border: '1px solid rgba(220, 53, 69, 0.3)' }}>
+                        <div>
+                          <div style={{ fontWeight: 600, color: 'white' }}>{op.fullName}</div>
+                          <div className="text-muted" style={{ fontSize: '0.8rem' }}>@{op.username} {op.telegramUsername && `| ${op.telegramUsername}`}</div>
+                        </div>
+                        <div className="flex gap-2">
+                          <button className="btn btn-outline" onClick={() => handleEditOperator(op)} style={{ padding: '0.4rem', border: 'none', background: 'rgba(255,255,255,0.05)' }}><Edit size={16} /></button>
+                          <button className="btn btn-danger" onClick={() => handleDeleteOperator(op._id)} style={{ padding: '0.4rem' }}><Trash2 size={16} /></button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {operators.length === 0 && <div className="text-center text-muted" style={{padding: '2rem'}}>Hali xodimlar yo'q</div>}
             </div>
           </div>
         )}
