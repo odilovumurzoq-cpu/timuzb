@@ -590,7 +590,7 @@ app.put('/api/events/:id', authMiddleware, adminMiddleware, async (req, res) => 
     if (oldEvent && oldEvent.status !== 'Topshirildi' && event.status === 'Topshirildi') {
       if (event.clientPhone) {
         const contactName = `${event.title || event.clientName || 'Mijoz'} ${new Date(event.date).toLocaleDateString('uz-UZ', { timeZone: 'Asia/Tashkent', day: '2-digit', month: '2-digit', year: 'numeric' })}`;
-        let msg = `Assalomu alaykum, ${event.clientName || 'Mijoz'}! 👋\n\nSizning buyurtmangiz muvaffaqiyatli topshirildi! ✅\nBizni tanlaganingiz uchun tashakkur! 🎥✨\n\nSizning fikringiz biz uchun muhim! Iltimos, xizmat sifatini quyidagi havola orqali baholang:\n⭐ https://timuzbukhara.onrender.com/track/${event._id}`;
+        let msg = `Assalomu alaykum, ${event.clientName || 'Mijoz'}! 👋\n\nSizning buyurtmangiz muvaffaqiyatli topshirildi! ✅\nBizni tanlaganingiz uchun tashakkur! 🎥✨`;
         sendUserbotMessage(event.clientPhone, msg, contactName).catch(err => console.log('Telegram xabar ketmadi:', err.message));
       }
     }
@@ -626,7 +626,7 @@ app.put('/api/events/:id/status', authMiddleware, async (req, res) => {
     if (oldStatus !== 'Topshirildi' && event.status === 'Topshirildi') {
       if (event.clientPhone) {
         const contactName = `${event.title || event.clientName || 'Mijoz'} ${new Date(event.date).toLocaleDateString('uz-UZ', { timeZone: 'Asia/Tashkent', day: '2-digit', month: '2-digit', year: 'numeric' })}`;
-        let msg = `Assalomu alaykum, ${event.clientName || 'Mijoz'}! 👋\n\nSizning buyurtmangiz muvaffaqiyatli topshirildi! ✅\nBizni tanlaganingiz uchun tashakkur! 🎥✨\n\nSizning fikringiz biz uchun muhim! Iltimos, xizmat sifatini quyidagi havola orqali baholang:\n⭐ https://timuzbukhara.onrender.com/track/${event._id}`;
+        let msg = `Assalomu alaykum, ${event.clientName || 'Mijoz'}! 👋\n\nSizning buyurtmangiz muvaffaqiyatli topshirildi! ✅\nBizni tanlaganingiz uchun tashakkur! 🎥✨`;
         sendUserbotMessage(event.clientPhone, msg, contactName).catch(err => console.log('Telegram xabar ketmadi:', err.message));
       }
     }
