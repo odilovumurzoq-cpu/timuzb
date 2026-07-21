@@ -1024,9 +1024,34 @@ function Dashboard({ user }) {
                       </div>
                     </div>
                     <div className="text-muted" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>Holat: <span className="badge">{event.status}</span></div>
-                    {event.album && <div className="text-muted" style={{ fontSize: '0.875rem', color: '#ffb300' }}>📸 Albom: {event.album}</div>}
-                    {event.caseType && <div className="text-muted" style={{ fontSize: '0.875rem', color: '#00e5ff' }}>💼 Keys: {event.caseType}</div>}
-                    {event.comment && <div className="text-muted" style={{ fontSize: '0.875rem' }}>💬 {event.comment}</div>}
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+                      <div>
+                        {event.album && <div className="text-muted" style={{ fontSize: '0.875rem', color: '#ffb300', marginBottom: '4px' }}>📸 Albom: {event.album}</div>}
+                        {event.caseType && <div className="text-muted" style={{ fontSize: '0.875rem', color: '#00e5ff', marginBottom: '4px' }}>💼 Keys: {event.caseType}</div>}
+                        {event.comment && <div className="text-muted" style={{ fontSize: '0.875rem' }}>💬 {event.comment}</div>}
+                      </div>
+                      
+                      {event.eventType && (
+                        <div style={{ 
+                          padding: '0.4rem 1rem', 
+                          background: 'rgba(139, 92, 246, 0.15)', 
+                          border: '1px solid rgba(139, 92, 246, 0.5)', 
+                          borderRadius: '8px', 
+                          color: '#c4b5fd', 
+                          fontWeight: 'bold', 
+                          fontSize: '1.1rem',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          minWidth: '120px'
+                        }}>
+                          <span style={{ fontSize: '0.65rem', color: 'rgba(196, 181, 253, 0.7)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '2px' }}>Loyiha</span>
+                          {event.eventType}
+                        </div>
+                      )}
+                    </div>
                     
                     {/* Xodimlar Badgelari */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.75rem' }}>
@@ -1073,7 +1098,10 @@ function Dashboard({ user }) {
                   </div>
                   {event.album && <div className="text-muted" style={{ fontSize: '0.875rem', color: '#ffb300', marginBottom: '0.2rem' }}>📸 Albom: {event.album}</div>}
                   {event.caseType && <div className="text-muted" style={{ fontSize: '0.875rem', color: '#00e5ff', marginBottom: '0.5rem' }}>💼 Keys: {event.caseType}</div>}
-                  <div className="text-muted" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>Holat: <span className="badge" style={{background: 'var(--success)'}}>{event.status}</span></div>
+                  <div className="text-muted" style={{ fontSize: '0.875rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span>Holat: <span className="badge" style={{background: 'var(--success)'}}>{event.status}</span></span>
+                    {event.eventType && <span>Loyiha: <span className="badge" style={{background: 'rgba(139, 92, 246, 0.2)', color: '#c4b5fd', border: '1px solid #8b5cf6'}}>{event.eventType}</span></span>}
+                  </div>
                   <div className="text-muted" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>Umumiy byudjet: <span style={{color: 'var(--success)'}}>{formatUZS(event.budget)}</span></div>
                   {event.comment && <div className="text-muted" style={{ fontSize: '0.875rem' }}>💬 {event.comment}</div>}
                   {event.clientRating && event.clientRating > 0 && (
