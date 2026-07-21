@@ -93,6 +93,58 @@ const createDefaultOperator = async () => {
     }
 };
 
+// ========== TEMPORARY TELEGRAM AUTH ENDPOINTS ==========
+const { Api, TelegramClient } = require("telegram");
+const { StringSession } = require("telegram/sessions");
+
+let authClient = null;
+let authPhoneCodeHash = null;
+let authPhone = null;
+
+app.get('/api/tg-auth/step1', async (req, res) => {
+  try {
+    const apiId = 39554997;
+    const apiHash = "545e97da4cb009d9b68a80b864496af8";
+    authPhone = req.query.phone;
+    if(!authPhone) return res.send("Nomer kiritilmadi. Misol: /api/tg-auth/step1?phone=+998901234567");
+    
+    authClient = new TelegramClient(new StringSession(""), apiId, apiHash, { connectionRetries: 5 });
+    await authClient.connect();
+    
+    const result = await authClient.sendCode(
+      {
+        apiId,
+        apiHash
+      },
+      authPhone
+    );
+    authPhoneCodeHash = result.phoneCodeHash;
+    res.send(`<h1>Kod yuborildi!</h1> Endi brauzerda manzil qatoriga kodni qoshib quyidagicha kiring: <br><br> <b>https://timuzbukhara.onrender.com/api/tg-auth/step2?code=12345</b> <br><br> (12345 o'rniga telegramga kelgan 5 xonali kodni yozasiz)`);
+  } catch (err) {
+    res.send("Xatolik: " + err.message);
+  }
+});
+
+app.get('/api/tg-auth/step2', async (req, res) => {
+  try {
+    const code = req.query.code;
+    if(!code) return res.send("Kod kiritilmadi.");
+    
+    await authClient.invoke(
+      new Api.auth.SignIn({
+        phoneNumber: authPhone,
+        phoneCodeHash: authPhoneCodeHash,
+        phoneCode: code,
+      })
+    );
+    const sessionStr = authClient.session.save();
+    res.send("<h1>Sessiya kodi tayyor (Nusxalab oling va Renderga qoying):</h1><br><textarea rows=10 cols=80>" + sessionStr + "</textarea><br><p>Keyin ushbu kodni Renderdagi TELEGRAM_SESSION o'rniga saqlang.</p>");
+  } catch (err) {
+    res.send("Xatolik: " + err.message);
+  }
+});
+// =======================================================
+
 const startDatabase = async () => {
   let mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/timproduction';
   const PORT = process.env.PORT || 5000;

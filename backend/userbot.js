@@ -121,7 +121,7 @@ const getTelegramMessages = async (usernameOrPhone, limit = 50, contactName = "M
               new Api.InputPhoneContact({
                 clientId: BigInt(Math.floor(Math.random() * 10000000)),
                 phone: target,
-                firstName: "Mijoz",
+                firstName: contactName,
                 lastName: ""
               })
             ]
