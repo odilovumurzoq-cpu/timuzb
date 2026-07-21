@@ -57,7 +57,7 @@ const sendUserbotMessage = async (username, message, contactName = "Mijoz") => {
     } catch (err) {
       if (err.message && err.message.includes("Cannot find any entity") && target.startsWith('+')) {
         console.log(`⚠️ Kontakt topilmadi. Avval kontaktga qo'shilmoqda: ${target}`);
-        await client.invoke(
+        const result = await client.invoke(
           new Api.contacts.ImportContacts({
             contacts: [
               new Api.InputPhoneContact({
@@ -69,8 +69,12 @@ const sendUserbotMessage = async (username, message, contactName = "Mijoz") => {
             ]
           })
         );
+        let newTarget = target;
+        if (result && result.users && result.users.length > 0) {
+          newTarget = result.users[0].id;
+        }
         // Retry
-        await client.sendMessage(target, { message });
+        await client.sendMessage(newTarget, { message });
       } else {
         throw err;
       }
