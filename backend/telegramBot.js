@@ -245,7 +245,7 @@ const initTelegramBot = () => {
     });
 
   } else {
-    console.log("Telegram bot token not provided. Bot is disabled.");
+    // console.log("Telegram bot token not provided. Bot is disabled.");
   }
 };
 
