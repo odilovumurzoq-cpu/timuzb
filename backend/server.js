@@ -95,7 +95,7 @@ startDatabase();
 
 
 // --- CRON JOB ---
-cron.schedule('0 * * * *', async () => {
+const checkUpcomingEvents = async () => {
   console.log('Running cron job to check for upcoming events...');
   try {
     const now = new Date();
@@ -125,14 +125,18 @@ cron.schedule('0 * * * *', async () => {
             await sendUserbotMessage(operator.telegramChatId, text);
         }
       }
-      console.log("Cron job finished.");
+      console.log(`Cron job finished for event: ${event.title}`);
       event.notified = true;
       await event.save();
     }
   } catch (error) {
     console.error('Error in cron job:', error);
   }
-});
+};
+
+cron.schedule('*/5 * * * *', checkUpcomingEvents);
+// Run immediately on server start in case it woke up from sleep
+setTimeout(checkUpcomingEvents, 5000);
 
 // --- CLIENT TRACKING ENDPOINT ---
 app.get('/api/events/track/:id', async (req, res) => {
