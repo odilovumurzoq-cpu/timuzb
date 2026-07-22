@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const eventSchema = new mongoose.Schema({
   title: { type: String, required: true },
-  eventType: { type: String, default: 'Nikoh oqshomi' },
+  eventType: { type: String, enum: ['To\'y', 'Fotiha', 'Fotosessiya', 'Love Story', 'Boshqa'], default: 'To\'y' },
   date: { type: Date, required: true },
   location: { type: String, required: true },
   venue: { type: String, required: true },
@@ -27,15 +27,6 @@ const eventSchema = new mongoose.Schema({
   videoLink: { type: String, default: '' },
   comment: { type: String, default: '' },
   notified: { type: Boolean, default: false },
-  reminderSent: { type: Boolean, default: false },
-  adminNote: { type: String, default: '' },
-  freelancerToken: { type: String, default: '' },
-  chatMessages: [{
-    senderName: String,
-    senderRole: String,
-    text: String,
-    timestamp: { type: Date, default: Date.now }
-  }],
   completedTasks: [{
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     role: String,

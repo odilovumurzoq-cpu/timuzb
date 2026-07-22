@@ -11,7 +11,7 @@ const initUserbot = async () => {
     const sessionStr = process.env.TELEGRAM_SESSION;
 
     if (!apiId || !apiHash || !sessionStr) {
-      // console.log("Userbot yopiq: API_ID, API_HASH yoki SESSION yo'q.");
+      console.log("Userbot yopiq: API_ID, API_HASH yoki SESSION yo'q.");
       return;
     }
 
@@ -45,11 +45,10 @@ const sendUserbotMessage = async (username, message, contactName = "Mijoz") => {
       return;
     }
 
+    // Make sure username starts with @ or is a phone number
     let target = username.trim();
-    if (target.includes('t.me/')) target = target.split('t.me/')[1];
-    if (target.includes('telegram.me/')) target = target.split('telegram.me/')[1];
     if (!target.startsWith('@') && !target.startsWith('+')) {
-      target = target.match(/^\d+$/) ? '+' + target : '@' + target;
+      target = '@' + target;
     }
     
     try {
@@ -57,7 +56,7 @@ const sendUserbotMessage = async (username, message, contactName = "Mijoz") => {
     } catch (err) {
       if (err.message && err.message.includes("Cannot find any entity") && target.startsWith('+')) {
         console.log(`⚠️ Kontakt topilmadi. Avval kontaktga qo'shilmoqda: ${target}`);
-        const result = await client.invoke(
+        await client.invoke(
           new Api.contacts.ImportContacts({
             contacts: [
               new Api.InputPhoneContact({
@@ -69,12 +68,8 @@ const sendUserbotMessage = async (username, message, contactName = "Mijoz") => {
             ]
           })
         );
-        let newTarget = target;
-        if (result && result.users && result.users.length > 0) {
-          newTarget = result.users[0].id;
-        }
         // Retry
-        await client.sendMessage(newTarget, { message });
+        await client.sendMessage(target, { message });
       } else {
         throw err;
       }
@@ -97,10 +92,8 @@ const getTelegramMessages = async (usernameOrPhone, limit = 50, contactName = "M
       await initUserbot();
     }
     let target = usernameOrPhone.trim();
-    if (target.includes('t.me/')) target = target.split('t.me/')[1];
-    if (target.includes('telegram.me/')) target = target.split('telegram.me/')[1];
     if (!target.startsWith('@') && !target.startsWith('+')) {
-      target = target.match(/^\d+$/) ? '+' + target : '@' + target;
+      target = '+' + target; // Asosiy hollarda telefon raqami bo'ladi
     }
     
     try {
@@ -121,7 +114,7 @@ const getTelegramMessages = async (usernameOrPhone, limit = 50, contactName = "M
               new Api.InputPhoneContact({
                 clientId: BigInt(Math.floor(Math.random() * 10000000)),
                 phone: target,
-                firstName: contactName,
+                firstName: "Mijoz",
                 lastName: ""
               })
             ]
