@@ -301,14 +301,19 @@ function Dashboard({ user }) {
       text = `Assalomu Alaykum 🌟\n\nSizning Videongiz tayyor bo'ldi! 🎉\n\nIltimos, Tim ofisidan kelib olib keting. 📍\n\nLoyihangiz: ${eventObj.eventType || "To'y"}\nSana: ${new Date(eventObj.date).toLocaleDateString('uz-UZ', { timeZone: 'Asia/Tashkent' })}\n\nTimProduction xizmatidan foydalanganingiz uchun rahmat! 😊`;
     } else {
       const formattedDate = new Date(eventObj.date).toLocaleDateString('uz-UZ', { timeZone: 'Asia/Tashkent', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-      text = `Assalomu alaykum, ${eventObj.clientName || 'Mijoz'}!\nTimProduction sizning buyurtmangizni qabul qildi.\n\nSarlavha: ${eventObj.title || "Mavjud emas"}\nTadbir: ${eventObj.eventType}\nSana: ${formattedDate}\nKamera soni: ${eventObj.cameraCount || 1} ta\n`;
+      text = `Assalomu alaykum, ${eventObj.clientName || 'Mijoz'}!\nTimProduction sizning buyurtmangizni qabul qildi.\n\n`;
+      text += `Sarlavha: ${eventObj.title || "Mavjud emas"}\n`;
+      text += `Tadbir: ${eventObj.eventType}\n`;
+      text += `Sana: ${formattedDate}\n`;
+      text += `Kamera soni: ${eventObj.cameraCount || 1} ta\n`;
       if (eventObj.assignedRoninchis && eventObj.assignedRoninchis.length > 0) text += `Roninchi: Bor\n`;
       if (eventObj.assignedPhotographers && eventObj.assignedPhotographers.length > 0) text += `Fotograf: Bor\n`;
       if (eventObj.album) text += `Albom: ${eventObj.album}\n`;
-      if (eventObj.caseType) text += `Keys: ${eventObj.caseType}\n`;
-      if (eventObj.budget) text += `\nUmumiy summa: ${eventObj.budget.toLocaleString()} so'm\n`;
-      if (eventObj.advancePayment) text += `Berilgan avans: ${eventObj.advancePayment.toLocaleString()} so'm\n`;
-      text += `\nTadbir kuni xizmat ko'rsatuvchilar yetib borishadi. Ishonchingiz uchun rahmat!`;
+      if (eventObj.comment) text += `Qo'shimcha Izoh: ${eventObj.comment}\n`;
+      text += `\nUmumiy summa: ${eventObj.budget ? eventObj.budget.toLocaleString('ru-RU') : 0} so'm\n`;
+      text += `Berilgan avans: ${eventObj.advancePayment ? eventObj.advancePayment.toLocaleString('ru-RU') : 0} so'm\n\n`;
+      text += `Tadbir kuni xizmat ko'rsatuvchilar yetib borishadi. Ishonchingiz uchun rahmat!\n\n`;
+      text += `🎉 To'yingiz jarayonini kuzatib borish uchun maxsus havola:\n🔗 https://timproductionuz.vercel.app/track/${eventObj._id}`;
     }
 
     setNewMessageText(text);
@@ -331,16 +336,19 @@ function Dashboard({ user }) {
   const openSmsModal = (event) => {
     const formattedDate = new Date(event.date).toLocaleDateString('uz-UZ', { timeZone: 'Asia/Tashkent', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
     
-    let text = `Assalomu alaykum, ${event.clientName || 'Mijoz'}!\nTimProduction sizning buyurtmangizni qabul qildi.\n\nSarlavha: ${event.title || "Mavjud emas"}\nTadbir: ${event.eventType}\nSana: ${formattedDate}\nKamera soni: ${event.cameraCount || 1} ta\n`;
+    let text = `Assalomu alaykum, ${event.clientName || 'Mijoz'}!\nTimProduction sizning buyurtmangizni qabul qildi.\n\n`;
+    text += `Sarlavha: ${event.title || "Mavjud emas"}\n`;
+    text += `Tadbir: ${event.eventType}\n`;
+    text += `Sana: ${formattedDate}\n`;
+    text += `Kamera soni: ${event.cameraCount || 1} ta\n`;
     if (event.assignedRoninchis && event.assignedRoninchis.length > 0) text += `Roninchi: Bor\n`;
     if (event.assignedPhotographers && event.assignedPhotographers.length > 0) text += `Fotograf: Bor\n`;
     if (event.album) text += `Albom: ${event.album}\n`;
-    if (event.caseType) text += `Keys: ${event.caseType}\n`;
-    
-    if (event.budget) text += `\nUmumiy summa: ${event.budget.toLocaleString()} so'm\n`;
-    if (event.advancePayment) text += `Berilgan avans: ${event.advancePayment.toLocaleString()} so'm\n`;
-    
-    text += `\nTadbir kuni xizmat ko'rsatuvchilar yetib borishadi. Ishonchingiz uchun rahmat!`;
+    if (event.comment) text += `Qo'shimcha Izoh: ${event.comment}\n`;
+    text += `\nUmumiy summa: ${event.budget ? event.budget.toLocaleString('ru-RU') : 0} so'm\n`;
+    text += `Berilgan avans: ${event.advancePayment ? event.advancePayment.toLocaleString('ru-RU') : 0} so'm\n\n`;
+    text += `Tadbir kuni xizmat ko'rsatuvchilar yetib borishadi. Ishonchingiz uchun rahmat!\n\n`;
+    text += `🎉 To'yingiz jarayonini kuzatib borish uchun maxsus havola:\n🔗 https://timproductionuz.vercel.app/track/${event._id}`;
     
     setSmsText(text);
     setSmsPhone(event.clientPhone);
