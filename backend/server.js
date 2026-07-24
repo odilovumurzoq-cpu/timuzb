@@ -157,9 +157,8 @@ const checkUpcomingEvents = async () => {
   }
 };
 
-cron.schedule('*/10 * * * * *', checkUpcomingEvents);
-// Run immediately on server start in case it woke up from sleep
-setTimeout(checkUpcomingEvents, 5000);
+setInterval(checkUpcomingEvents, 10000);
+setTimeout(checkUpcomingEvents, 2000);
 
 // --- CLIENT TRACKING ENDPOINT ---
 app.get('/api/events/track/:id', async (req, res) => {
@@ -336,7 +335,7 @@ app.put('/api/operators/:id', authMiddleware, adminMiddleware, async (req, res) 
     if (password) {
       updateData.password = await bcrypt.hash(password, 10);
     }
-    const operator = await User.findByIdAndUpdate(req.params.id, updateData, { new: true });
+    const operator = await User.findByIdAndUpdate(req.params.id, updateData, { returnDocument: 'after' });
     res.json(operator);
   } catch (error) {
     res.status(400).json({ message: 'Xatolik' });
@@ -486,7 +485,7 @@ app.post('/api/events/:id/send', authMiddleware, async (req, res) => {
 app.put('/api/events/:id', authMiddleware, adminMiddleware, async (req, res) => {
   try {
     const oldEvent = await Event.findById(req.params.id);
-    const event = await Event.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const event = await Event.findByIdAndUpdate(req.params.id, req.body, { returnDocument: 'after' });
     
     if (oldEvent && oldEvent.status !== 'Tayyor' && event.status === 'Tayyor') {
       if (event.clientPhone) {
