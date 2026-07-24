@@ -139,39 +139,54 @@ function Dashboard({ user }) {
   };
 
   const handleEditEvent = (event) => {
-    setEditEventId(event._id);
-    const dateStr = new Date(event.date);
-    const offset = dateStr.getTimezoneOffset() * 60000;
-    const localISOTime = (new Date(dateStr - offset)).toISOString().slice(0, 16);
-    
-    setNewEvent({
-      title: event.title,
-      eventType: ["Nikoh oqshomi", "Kelin biyori", "Joyg'undoron", "Nahorgi Osh", "Fotiha", "Fotosessiya", "Love Story"].includes(event.eventType) ? event.eventType : 'Boshqa',
-      customEventType: ["Nikoh oqshomi", "Kelin biyori", "Joyg'undoron", "Nahorgi Osh", "Fotiha", "Fotosessiya", "Love Story"].includes(event.eventType) ? "" : event.eventType,
-      date: localISOTime,
-      location: event.location,
-      venue: event.venue,
-      cameraCount: event.cameraCount,
-      assignedOperators: event.assignedOperators.map(op => op._id),
-      assignedEditors: event.assignedEditors ? event.assignedEditors.map(op => op._id) : [],
-      assignedRoninchis: event.assignedRoninchis ? event.assignedRoninchis.map(op => op._id) : [],
-      assignedPhotographers: event.assignedPhotographers ? event.assignedPhotographers.map(op => op._id) : [],
-      clientName: event.clientName || '',
-      clientPhone: event.clientPhone || '',
-      budget: event.budget || 0,
-      advancePayment: event.advancePayment || 0,
-      operatorFee: event.operatorFee || 0,
-      editorFee: event.editorFee || 0,
-      roninFee: event.roninFee || 0,
-      photoFee: event.photoFee || 0,
-      status: event.status || 'Kutilmoqda',
-      comment: event.comment || '',
-      adminNote: event.adminNote || '',
-      album: event.album || '',
-      caseType: event.caseType || ''
-    });
-    setActiveTab('events');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    try {
+      setEditEventId(event._id);
+      
+      let localISOTime = '';
+      if (event.date) {
+        const dateStr = new Date(event.date);
+        if (!isNaN(dateStr)) {
+          const offset = dateStr.getTimezoneOffset() * 60000;
+          localISOTime = (new Date(dateStr - offset)).toISOString().slice(0, 16);
+        }
+      }
+      
+      const safeMap = (arr) => {
+        if (!arr || !Array.isArray(arr)) return [];
+        return arr.map(op => (op && op._id) ? op._id : (typeof op === 'string' ? op : null)).filter(Boolean);
+      };
+
+      setNewEvent({
+        title: event.title || '',
+        eventType: ["Nikoh oqshomi", "Kelin biyori", "Joyg'undoron", "Nahorgi Osh", "Fotiha", "Fotosessiya", "Love Story"].includes(event.eventType) ? event.eventType : 'Boshqa',
+        customEventType: ["Nikoh oqshomi", "Kelin biyori", "Joyg'undoron", "Nahorgi Osh", "Fotiha", "Fotosessiya", "Love Story"].includes(event.eventType) ? "" : (event.eventType || ''),
+        date: localISOTime,
+        location: event.location || '',
+        venue: event.venue || '',
+        cameraCount: event.cameraCount || 1,
+        assignedOperators: safeMap(event.assignedOperators),
+        assignedEditors: safeMap(event.assignedEditors),
+        assignedRoninchis: safeMap(event.assignedRoninchis),
+        assignedPhotographers: safeMap(event.assignedPhotographers),
+        clientName: event.clientName || '',
+        clientPhone: event.clientPhone || '',
+        budget: event.budget || 0,
+        advancePayment: event.advancePayment || 0,
+        operatorFee: event.operatorFee || 0,
+        editorFee: event.editorFee || 0,
+        roninFee: event.roninFee || 0,
+        photoFee: event.photoFee || 0,
+        status: event.status || 'Kutilmoqda',
+        comment: event.comment || '',
+        adminNote: event.adminNote || '',
+        album: event.album || '',
+        caseType: event.caseType || ''
+      });
+      setActiveTab('events');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err) {
+      console.error("Edit xatosi:", err);
+    }
   };
 
   const cancelEditEvent = () => {
@@ -928,7 +943,7 @@ function Dashboard({ user }) {
                       <label key={op._id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'white', userSelect: 'none' }}>
                         <input 
                           type="checkbox" 
-                          checked={newEvent.assignedOperators.includes(op._id)} 
+                          checked={(newEvent.assignedOperators || []).includes(op._id)} 
                           onChange={() => handleOperatorCheckbox(op._id)} 
                           style={{ width: '1.2rem', height: '1.2rem', accentColor: '#28a745', cursor: 'pointer' }}
                         />
@@ -948,7 +963,7 @@ function Dashboard({ user }) {
                       <label key={op._id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'white', userSelect: 'none' }}>
                         <input 
                           type="checkbox" 
-                          checked={newEvent.assignedEditors.includes(op._id)} 
+                          checked={(newEvent.assignedEditors || []).includes(op._id)} 
                           onChange={() => handleEditorCheckbox(op._id)} 
                           style={{ width: '1.2rem', height: '1.2rem', accentColor: '#007bff', cursor: 'pointer' }}
                         />
@@ -968,7 +983,7 @@ function Dashboard({ user }) {
                       <label key={op._id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'white', userSelect: 'none' }}>
                         <input 
                           type="checkbox" 
-                          checked={newEvent.assignedRoninchis.includes(op._id)} 
+                          checked={(newEvent.assignedRoninchis || []).includes(op._id)} 
                           onChange={() => handleRoninchiCheckbox(op._id)} 
                           style={{ width: '1.2rem', height: '1.2rem', accentColor: '#ffc107', cursor: 'pointer' }}
                         />
@@ -988,7 +1003,7 @@ function Dashboard({ user }) {
                       <label key={op._id} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', color: 'white', userSelect: 'none' }}>
                         <input 
                           type="checkbox" 
-                          checked={newEvent.assignedPhotographers.includes(op._id)} 
+                          checked={(newEvent.assignedPhotographers || []).includes(op._id)} 
                           onChange={() => handleFotografCheckbox(op._id)} 
                           style={{ width: '1.2rem', height: '1.2rem', accentColor: '#dc3545', cursor: 'pointer' }}
                         />
@@ -1063,17 +1078,17 @@ function Dashboard({ user }) {
                     
                     {/* Xodimlar Badgelari */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.75rem' }}>
-                      {event.assignedOperators && event.assignedOperators.map(op => (
-                        <span key={op._id} className="badge" style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#93c5fd', border: '1px solid #3b82f6' }}>🎥 {op.fullName}</span>
+                      {event.assignedOperators && event.assignedOperators.map((op, idx) => op && (
+                        <span key={op._id || idx} className="badge" style={{ background: 'rgba(59, 130, 246, 0.2)', color: '#93c5fd', border: '1px solid #3b82f6' }}>🎥 {op.fullName || 'Noma\'lum'}</span>
                       ))}
-                      {event.assignedEditors && event.assignedEditors.map(op => (
-                        <span key={op._id} className="badge" style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#6ee7b7', border: '1px solid #10b981' }}>✂️ {op.fullName}</span>
+                      {event.assignedEditors && event.assignedEditors.map((op, idx) => op && (
+                        <span key={op._id || idx} className="badge" style={{ background: 'rgba(16, 185, 129, 0.2)', color: '#6ee7b7', border: '1px solid #10b981' }}>✂️ {op.fullName || 'Noma\'lum'}</span>
                       ))}
-                      {event.assignedRoninchis && event.assignedRoninchis.map(op => (
-                        <span key={op._id} className="badge" style={{ background: 'rgba(245, 158, 11, 0.2)', color: '#fcd34d', border: '1px solid #f59e0b' }}>🚁 {op.fullName}</span>
+                      {event.assignedRoninchis && event.assignedRoninchis.map((op, idx) => op && (
+                        <span key={op._id || idx} className="badge" style={{ background: 'rgba(245, 158, 11, 0.2)', color: '#fcd34d', border: '1px solid #f59e0b' }}>🚁 {op.fullName || 'Noma\'lum'}</span>
                       ))}
-                      {event.assignedPhotographers && event.assignedPhotographers.map(op => (
-                        <span key={op._id} className="badge" style={{ background: 'rgba(6, 182, 212, 0.2)', color: '#67e8f9', border: '1px solid #06b6d4' }}>📸 {op.fullName}</span>
+                      {event.assignedPhotographers && event.assignedPhotographers.map((op, idx) => op && (
+                        <span key={op._id || idx} className="badge" style={{ background: 'rgba(6, 182, 212, 0.2)', color: '#67e8f9', border: '1px solid #06b6d4' }}>📸 {op.fullName || 'Noma\'lum'}</span>
                       ))}
                     </div>
                   </div>
