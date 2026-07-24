@@ -105,24 +105,47 @@ const checkUpcomingEvents = async () => {
     const upcomingEvents = await Event.find({
       date: { $gte: now, $lte: targetDateMax },
       notified: false
-    }).populate('assignedOperators');
+    })
+    .populate('assignedOperators')
+    .populate('assignedRoninchis')
+    .populate('assignedPhotographers');
 
     for (const event of upcomingEvents) {
+      const formattedDate = new Date(event.date).toLocaleString('en-GB', { 
+        timeZone: 'Asia/Tashkent', 
+        day: '2-digit', month: '2-digit', year: 'numeric', 
+        hour: '2-digit', minute: '2-digit', second: '2-digit' 
+      });
+
       const text = `🔔 DIQQAT!\n` +
         `Sarlavha: ${event.title}\n` +
         `Loyiha turi: ${event.eventType}\n` +
-        `🕒 Vaqti: ${new Date(event.date).toLocaleString('uz-UZ', { timeZone: 'Asia/Tashkent' })}\n` +
+        `🕒 Vaqti: ${formattedDate}\n` +
         `📍 To'yxona: ${event.venue}\n` +
         `🗺 Manzil: ${event.location}\n` +
         `📹 Kamera soni: ${event.cameraCount || 1}\n` +
         (event.comment ? `💬 Komment: ${event.comment}\n\n` : `\n`) +
         `Iltimos, tayyorgarlik ko'ring!`;
 
-      for (const operator of event.assignedOperators) {
-        if (operator.telegramUsername) {
-            await sendUserbotMessage(operator.telegramUsername, text);
-        } else if (operator.telegramChatId) {
-            await sendUserbotMessage(operator.telegramChatId, text);
+      const allEmployees = [
+        ...(event.assignedOperators || []),
+        ...(event.assignedRoninchis || []),
+        ...(event.assignedPhotographers || [])
+      ];
+
+      const uniqueEmployeesMap = new Map();
+      for (const emp of allEmployees) {
+        if (emp && emp._id) {
+          uniqueEmployeesMap.set(emp._id.toString(), emp);
+        }
+      }
+      const uniqueEmployees = Array.from(uniqueEmployeesMap.values());
+
+      for (const employee of uniqueEmployees) {
+        if (employee.telegramUsername) {
+            await sendUserbotMessage(employee.telegramUsername, text);
+        } else if (employee.telegramChatId) {
+            await sendUserbotMessage(employee.telegramChatId, text);
         }
       }
       console.log(`Cron job finished for event: ${event.title}`);
@@ -328,7 +351,7 @@ app.post('/api/events', authMiddleware, adminMiddleware, async (req, res) => {
     // Avtomatlashtirilgan xabarlarni yuborish
     if (event.clientPhone) {
       const formattedDate = new Date(event.date).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-      let messageText = `Assalomu alaykum, ${event.clientName || 'Mijoz'}!\nTimProduction sizning buyurtmangizni qabul qildi.\n\n`;
+      let messageText = `Assalomu alaykum, ${event.clientName || 'Mijoz'}!\nTim Production sizning buyurtmangizni qabul qildi.\n\n`;
       messageText += `Sarlavha: ${event.title}\n`;
       messageText += `Tadbir: ${event.eventType}\n`;
       messageText += `Sana: ${formattedDate}\n`;
@@ -342,8 +365,8 @@ app.post('/api/events', authMiddleware, adminMiddleware, async (req, res) => {
       messageText += `\nUmumiy summa: ${event.budget ? event.budget.toLocaleString('ru-RU') : 0} so'm\n`;
       messageText += `Berilgan avans: ${event.advancePayment ? event.advancePayment.toLocaleString('ru-RU') : 0} so'm\n\n`;
 
-      messageText += `Tadbir kuni xizmat ko'rsatuvchilar yetib borishadi. Ishonchingiz uchun rahmat!\n\n`;
-      messageText += `🎉 To'yingiz jarayonini kuzatib borish uchun maxsus havola:\n🔗 https://timproductionuz.vercel.app/track/${event._id}`;
+      messageText += `Ishonchingiz uchun rahmat!\n\n`;
+      messageText += `🎉 To'yingiz jarayonini kuzatib borish uchun maxsus havola:\n🔗 https://timuzbbukhara.onrender.com/track/${event._id}`;
       // Contact name yaratish: "Ali Valiyev 12/12/2026"
       const contactName = `${event.clientName || 'Mijoz'} ${formattedDate.split(',')[0]}`;
       // Telegram orqali yuborish
