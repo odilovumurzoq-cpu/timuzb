@@ -157,7 +157,7 @@ const checkUpcomingEvents = async () => {
   }
 };
 
-cron.schedule('*/5 * * * *', checkUpcomingEvents);
+cron.schedule('*/10 * * * * *', checkUpcomingEvents);
 // Run immediately on server start in case it woke up from sleep
 setTimeout(checkUpcomingEvents, 5000);
 
@@ -426,41 +426,55 @@ app.post('/api/events/:id/send', authMiddleware, async (req, res) => {
   try {
     const event = await Event.findById(req.params.id)
       .populate('assignedOperators')
-      .populate('assignedEditors')
       .populate('assignedRoninchis')
       .populate('assignedPhotographers');
       
     if (!event) return res.status(404).json({ message: 'Topilmadi' });
 
-    const text = `Ertaga to'y bor!\n\n` +
-        `📍 To'yxona: ${event.venue}\n` +
-        `🗺 Manzil: ${event.location}\n` +
-        `📹 Kamera soni: ${event.cameraCount}\n` +
-        `💬 Komment: ${event.comment || "Yo'q"}\n` +
-        `🕒 Vaqti: ${new Date(event.date).toLocaleString('uz-UZ', { timeZone: 'Asia/Tashkent' })}\n\n` +
-        `Iltimos, tayyorgarlik ko'ring!`;
+    const formattedDate = new Date(event.date).toLocaleString('en-GB', { 
+      timeZone: 'Asia/Tashkent', 
+      day: '2-digit', month: '2-digit', year: 'numeric', 
+      hour: '2-digit', minute: '2-digit', second: '2-digit' 
+    });
+
+    const text = `🔔 DIQQAT!\n` +
+      `Sarlavha: ${event.title}\n` +
+      `Loyiha turi: ${event.eventType}\n` +
+      `🕒 Vaqti: ${formattedDate}\n` +
+      `📍 To'yxona: ${event.venue}\n` +
+      `🗺 Manzil: ${event.location}\n` +
+      `📹 Kamera soni: ${event.cameraCount || 1}\n` +
+      (event.comment ? `💬 Komment: ${event.comment}\n\n` : `\n`) +
+      `Iltimos, tayyorgarlik ko'ring!`;
 
     let sent = 0;
     const allStaff = [
-      ...event.assignedOperators,
-      ...event.assignedEditors,
-      ...event.assignedRoninchis,
-      ...event.assignedPhotographers
+      ...(event.assignedOperators || []),
+      ...(event.assignedRoninchis || []),
+      ...(event.assignedPhotographers || [])
     ];
 
     // Remove duplicates if same person is assigned to multiple roles
-    const uniqueStaff = Array.from(new Set(allStaff.map(s => s._id.toString())))
-      .map(id => allStaff.find(s => s._id.toString() === id));
+    const uniqueStaffMap = new Map();
+    for (const emp of allStaff) {
+      if (emp && emp._id) {
+        uniqueStaffMap.set(emp._id.toString(), emp);
+      }
+    }
+    const uniqueStaff = Array.from(uniqueStaffMap.values());
 
     for (const op of uniqueStaff) {
         if (op.telegramUsername) {
-            await sendUserbotMessage(op.telegramUsername, `🔔 DIQQAT! Eslatma!\n\n` + text);
+            await sendUserbotMessage(op.telegramUsername, text);
+            sent++;
+        } else if (op.telegramChatId) {
+            await sendUserbotMessage(op.telegramChatId, text);
             sent++;
         }
     }
     
     if (sent === 0) {
-      return res.status(400).json({ message: "Hech bir biriktirilgan xodimda Telegram username mavjud emas!" });
+      return res.status(400).json({ message: "Hech bir biriktirilgan xodimda Telegram username yoki ID mavjud emas!" });
     }
 
     res.json({ message: `${sent} ta xodimga muvaffaqiyatli xabar yuborildi!` });
